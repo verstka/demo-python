@@ -1,0 +1,26 @@
+# Copy to e.g. /etc/systemd/system/demo-cms.service
+# Then: sudo systemctl daemon-reload && sudo systemctl enable --now demo-cms
+#
+# Adjust User, Group, WorkingDirectory, EnvironmentFile, and ExecStart paths.
+
+[Unit]
+Description=Verstka CMS (uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/demo-cms
+EnvironmentFile=/var/www/demo-cms/.env
+ExecStart=/var/www/demo-cms/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+
+# Optional hardening (uncomment and tune paths if your layout matches):
+# ReadWritePaths=/var/www/demo-cms/storage /var/www/demo-cms/data.db
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Done — CMS</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 3rem auto; padding: 0 1rem; }
+    .ok { color: #060; }
+    code { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1 class="ok">User written to .env</h1>
+  <p>For account <strong>{{ user_email }}</strong>, the <code>ADMINS</code> variable was added to <code>.env</code> with a password hash.</p>
+  <p><strong>Restart the application</strong> so the process reloads the environment and imports the user into the database (when <code>cms_users</code> is empty, this happens on startup).</p>
+  <p>For example:</p>
+  <pre><code>sudo systemctl restart demo-cms</code></pre>
+  <p>After restart, open <a href="/cms/login">/cms/login</a> and sign in with the same email and password.</p>
+</body>
+</html>

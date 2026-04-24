@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title|e }}</title>
+  <link rel="canonical" href="{{ canonical_url|e }}">
+{% if og_title %}
+  <meta property="og:title" content="{{ og_title|e }}">
+{% endif %}
+{% if og_description %}
+  <meta property="og:description" content="{{ og_description|e }}">
+{% endif %}
+{% if og_image %}
+  <meta property="og:image" content="{{ og_image|e }}">
+{% endif %}
+{% if fonts_css_exists %}
+  <link rel="stylesheet" href="/fonts/fonts.css">
+{% endif %}
+  <link href="//go.verstka.org/critical.css" rel="stylesheet">
+</head>
+<body>
+{% if menu_html %}
+  <div class="site-menu" data-site-menu>{{ menu_html|safe }}</div>
+{% endif %}
+  <article class="verstka-article" data-verstka-article>{{ body_html|safe }}</article>
+{% if footer_html %}
+  <div class="site-footer" data-site-footer>{{ footer_html|safe }}</div>
+{% endif %}
+  <script>
+    window.onVMSAPIReady = function (api) {
+      api.Article.enable({ display_mode: 'default' });
+    };
+  </script>
+  <script src="//go.verstka.org/api.js" async type="text/javascript"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Users — CMS</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem 2rem; max-width: 40rem; }
+    nav { margin-bottom: 1.5rem; }
+    nav a { margin-right: 1rem; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.5rem 0; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    fieldset { margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/cms/articles">Articles</a>
+    <a href="/cms/users">Users</a>
+    <a href="/cms/logout">Sign out</a>
+  </nav>
+  <h1>Administrators</h1>
+  <ul>
+    {% for u in users %}
+    <li>
+      <strong>{{ u.user_email }}</strong>
+      <form method="post" action="/cms/users/delete" style="display:inline" onsubmit="return confirm('Delete this user?');">
+        <input type="hidden" name="user_email" value="{{ u.user_email }}">
+        <button type="submit">Delete</button>
+      </form>
+      <form method="post" action="/cms/users/password" style="display:inline">
+        <input type="hidden" name="user_email" value="{{ u.user_email }}">
+        <input type="password" name="password" placeholder="New password" required>
+        <button type="submit">Change password</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <fieldset>
+    <legend>Add user</legend>
+    <form method="post" action="/cms/users/create">
+      <label>Email <input name="user_email" required></label>
+      <label>Password <input name="password" type="password" required></label>
+      <button type="submit">Add</button>
+    </form>
+  </fieldset>
+</body>
+</html>
