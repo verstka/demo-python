@@ -11,3 +11,7 @@
 - Added `repo.count_cms_users` for bootstrap detection.
 - README: documented first run without `ADMINS`.
 - Translated `README.md` and all Jinja2 CMS/article templates to English; aligned login/bootstrap error strings in `app/routers/cms.py`.
+
+## 2026-04-26
+
+- Added `Settings.debug` / env `DEBUG`; when true, `DebugRequestLoggingMiddleware` in `app/debug_request_logging.py` logs HTTP request/response headers and truncated bodies to stdout; wired in `app/main.py` after `SessionMiddleware`. Documented in `README.md` and `.env.example`.

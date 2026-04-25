@@ -11,6 +11,7 @@ from verstka_sdk.integrations.fastapi import build_callback_router, install_exce
 
 from app.config import get_settings
 from app.database import init_db
+from app.debug_request_logging import DebugRequestLoggingMiddleware
 from app.routers import cms as cms_router
 from app.services import publish
 from app.verstka_handlers import build_verstka_hooks
@@ -58,6 +59,8 @@ def create_app() -> FastAPI:
         same_site="lax",
         https_only=False,
     )
+    if settings.debug:
+        app.add_middleware(DebugRequestLoggingMiddleware)
     install_exception_handlers(app)
     app.include_router(cms_router.router)
     return app

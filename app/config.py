@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     session_secret: str = Field(default="dev-secret-change-me", validation_alias="SESSION_SECRET")
     database_url: str = Field(default="sqlite+aiosqlite:///./data.db", validation_alias="DATABASE_URL")
 
+    # When true, logs each HTTP request/response (headers + body preview) to stdout — dev only.
+    debug: bool = Field(default=False, validation_alias="DEBUG")
+
     # JSON string in .env: {"user":"$argon2id$..."}
     admins_json: str = Field(default="{}", validation_alias="ADMINS")
 
@@ -41,6 +44,19 @@ class Settings(BaseSettings):
     @classmethod
     def _coerce_path(cls, v: Any) -> Path:
         return Path(v) if v is not None else Path(".")
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def _coerce_debug(cls, v: Any) -> bool:
+        if isinstance(v, bool):
+            return v
+        if v is None:
+            return False
+        if isinstance(v, int):
+            return v != 0
+        if isinstance(v, str):
+            return v.strip().lower() in ("1", "true", "yes", "on")
+        return bool(v)
 
     def admins_seed(self) -> dict[str, str]:
         raw = (self.admins_json or "{}").strip()

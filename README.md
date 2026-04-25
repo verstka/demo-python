@@ -19,6 +19,10 @@ uv pip install -e .
 
 Copy `.env.example` to `.env` and fill in the variables.
 
+### `DEBUG` (HTTP logging to stdout)
+
+Set **`DEBUG=1`** (or `true` / `yes` / `on`) to log each HTTP request and response to **stdout**: method, path, query, request headers, request body preview, response status, response headers, and response body preview (first 16 KiB per direction). **Do not enable in production** — logs may contain cookies, `Authorization`, form passwords, and API secrets. Restart the app after changing `DEBUG`.
+
 ### First run without `ADMINS`
 
 If **`ADMINS`** in `.env` has **no users** (empty object `{}` or the variable is missing) and the **`cms_users`** table is empty, opening **`/cms/login`** shows a form to create the first administrator: email and password are written to **`ADMINS`** as an argon2 hash only. Then **restart the application** (`systemctl restart …` or restart the worker) so the process reloads the environment and imports the user into SQLite on startup. Then sign in at **`/cms/login`** with the same credentials.
