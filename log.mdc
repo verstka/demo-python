@@ -15,3 +15,4 @@
 ## 2026-04-26
 
 - Added `Settings.debug` / env `DEBUG`; when true, `DebugRequestLoggingMiddleware` in `app/debug_request_logging.py` logs HTTP request/response headers and truncated bodies to stdout; wired in `app/main.py` after `SessionMiddleware`. Documented in `README.md` and `.env.example`.
+- Verstka: strip `VERSTKA_API_KEY` / `VERSTKA_API_SECRET` / `VERSTKA_CALLBACK_URL` on load; pass `debug=settings.debug` into `VerstkaConfig` for richer callback signature errors. README: `invalid_signature` troubleshooting.

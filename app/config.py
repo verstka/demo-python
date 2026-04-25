@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     def _coerce_path(cls, v: Any) -> Path:
         return Path(v) if v is not None else Path(".")
 
+    @field_validator("verstka_api_key", "verstka_api_secret", "verstka_callback_url", mode="before")
+    @classmethod
+    def _strip_verstka_strings(cls, v: Any) -> Any:
+        """Avoid invalid_signature from accidental spaces/newlines in .env."""
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
     @field_validator("debug", mode="before")
     @classmethod
     def _coerce_debug(cls, v: Any) -> bool:

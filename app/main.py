@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
         api_secret=settings.verstka_api_secret,
         callback_url=settings.verstka_callback_url,
         api_url=settings.verstka_api_url,
+        debug=settings.debug,
     )
     client = AsyncVerstkaClient(vconf)
     storage = CmsVerstkaStorage(settings)
