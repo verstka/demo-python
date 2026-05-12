@@ -7,12 +7,14 @@ from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import quote
 
+import httpx
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER
+from verstka_sdk import VerstkaApiError, VerstkaError
 
 from app.config import Settings, get_settings
 from app.database import get_connection
@@ -41,6 +43,41 @@ def _auth_or_redirect(request: Request) -> str | RedirectResponse:
 
 def _is_valid_email(value: str) -> bool:
     return bool(_EMAIL_RE.fullmatch(value.strip()))
+
+
+def _editor_config_error(settings: Settings) -> str | None:
+    missing: list[str] = []
+    if not settings.verstka_api_key:
+        missing.append("VERSTKA_API_KEY")
+    if not settings.verstka_api_secret:
+        missing.append("VERSTKA_API_SECRET")
+    if not settings.verstka_callback_url:
+        missing.append("VERSTKA_CALLBACK_URL")
+    if not missing:
+        return None
+    return "Verstka editor is not configured. Set " + ", ".join(missing) + " and restart the app."
+
+
+def _editor_error_response(
+    request: Request,
+    settings: Settings,
+    *,
+    status_code: int,
+    title: str,
+    message: str,
+) -> HTMLResponse:
+    return _templates(settings).TemplateResponse(
+        request,
+        "cms/editor_error.html.j2",
+        {
+            "request": request,
+            "title": title,
+            "message": message,
+            "api_url": settings.verstka_api_url,
+            "callback_url": settings.verstka_callback_url,
+        },
+        status_code=status_code,
+    )
 
 
 async def _verify_login(settings: Settings, user_email: str, password: str) -> bool:
@@ -322,10 +359,19 @@ async def articles_open_editor(
     request: Request,
     path: str = Query(..., description="Логический путь статьи, например /index"),
     settings: Settings = Depends(get_settings),
-) -> RedirectResponse:
+) -> Any:
     auth = _auth_or_redirect(request)
     if isinstance(auth, RedirectResponse):
         return auth
+    config_error = _editor_config_error(settings)
+    if config_error:
+        return _editor_error_response(
+            request,
+            settings,
+            status_code=500,
+            title="Verstka editor is not configured",
+            message=config_error,
+        )
     p = normalize_article_path(path)
     client = request.app.state.verstka_client
     async with get_connection(settings) as db:
@@ -333,7 +379,44 @@ async def articles_open_editor(
         if not row:
             raise HTTPException(404)
         vms = repo.parse_vms_json(row.get("vms_json"))
-    url = await client.get_editor_url(row["material_id"], vms_json=vms, metadata={})
+    try:
+        url = await client.get_editor_url(
+            row["material_id"],
+            vms_json=vms,
+            metadata={"user_email": str(auth)},
+        )
+    except VerstkaApiError as exc:
+        message = exc.message
+        if exc.status_code == 403 and "not allowed" in exc.message.lower():
+            message = (
+                "Verstka rejected this callback host for the current API key. "
+                f"Current VERSTKA_CALLBACK_URL is {settings.verstka_callback_url!r}. "
+                "Use an HTTPS public callback URL that is allowed for this key, "
+                "then restart the app."
+            )
+        return _editor_error_response(
+            request,
+            settings,
+            status_code=exc.status_code or 502,
+            title="Could not open Verstka editor",
+            message=message,
+        )
+    except httpx.RequestError as exc:
+        return _editor_error_response(
+            request,
+            settings,
+            status_code=502,
+            title="Could not reach Verstka API",
+            message=f"Request to {settings.verstka_api_url!r} failed: {exc}",
+        )
+    except (ValueError, VerstkaError) as exc:
+        return _editor_error_response(
+            request,
+            settings,
+            status_code=500,
+            title="Could not open Verstka editor",
+            message=str(exc),
+        )
     return RedirectResponse(url, status_code=HTTP_303_SEE_OTHER)
 
 

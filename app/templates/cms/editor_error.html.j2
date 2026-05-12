@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — CMS</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; }
+    nav { margin-bottom: 1.5rem; }
+    nav a { margin-right: 1rem; }
+    .err { color: #8a1f11; background: #fff3f0; border: 1px solid #efc7bf; padding: 1rem; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; }
+    dt { font-weight: 700; }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/cms/articles">Articles</a>
+    <a href="/cms/users">Users</a>
+    <a href="/cms/logout">Sign out</a>
+  </nav>
+  <h1>{{ title }}</h1>
+  <p class="err">{{ message }}</p>
+  <dl>
+    <dt>API URL</dt>
+    <dd><code>{{ api_url }}</code></dd>
+    <dt>Callback URL</dt>
+    <dd><code>{{ callback_url }}</code></dd>
+  </dl>
+</body>
+</html>

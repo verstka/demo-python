@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     verstka_api_secret: str = Field(default="", validation_alias="VERSTKA_API_SECRET")
     verstka_callback_url: str = Field(default="", validation_alias="VERSTKA_CALLBACK_URL")
     verstka_api_url: str = Field(
-        default="https://api.r2.verstka.org/integration",
+        default="https://api-stage.verstka.org/integration",
         validation_alias="VERSTKA_API_URL",
     )
 
