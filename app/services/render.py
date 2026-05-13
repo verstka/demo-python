@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import json
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.config import Settings
+
+VIEWER_SCRIPT_URL = "/verstka-viewer/index.js"
 
 
 def _jinja_env(settings: Settings) -> Environment:
@@ -17,6 +19,10 @@ def _jinja_env(settings: Settings) -> Environment:
         trim_blocks=True,
         lstrip_blocks=True,
     )
+
+
+def is_current_verstka_article_html(html: str) -> bool:
+    return "data-vrstk-article" in html and "data-vrstk-article-payload" in html
 
 
 def render_article_page(
@@ -36,9 +42,14 @@ def render_article_page(
         p = article["path"].rstrip("/") or article["path"]
         norm = p.lstrip("/")
         og_image = f"{base}/{norm}/{rel}" if not str(rel).startswith("http") else rel
+    body_html = article.get("html") or ""
+    viewer_bootstrap_enabled = any(
+        is_current_verstka_article_html(html) for html in (body_html, menu_html, footer_html)
+    )
     return tpl.render(
         title=article.get("title") or article["path"],
-        body_html=article.get("html") or "",
+        article_html=body_html,
+        article_is_current_verstka_html=is_current_verstka_article_html(body_html),
         menu_html=menu_html,
         footer_html=footer_html,
         og_title=article.get("og_title") or article.get("title") or "",
@@ -46,6 +57,9 @@ def render_article_page(
         og_image=og_image,
         fonts_css_exists=fonts_css_exists,
         canonical_url=f"{base}{article['path']}/",
+        viewer_bootstrap_enabled=viewer_bootstrap_enabled,
+        viewer_script_url=VIEWER_SCRIPT_URL,
+        viewer_options_json=json.dumps({"dev": True} if settings.verstka_viewer_dev else {}),
     )
 
 

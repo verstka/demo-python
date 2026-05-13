@@ -17,21 +17,30 @@
 {% if fonts_css_exists %}
   <link rel="stylesheet" href="/fonts/fonts.css">
 {% endif %}
-  <link href="//go.verstka.org/critical.css" rel="stylesheet">
 </head>
 <body>
 {% if menu_html %}
   <div class="site-menu" data-site-menu>{{ menu_html|safe }}</div>
 {% endif %}
-  <article class="verstka-article" data-verstka-article>{{ body_html|safe }}</article>
+{% if article_is_current_verstka_html %}
+  {{ article_html|safe }}
+{% else %}
+  <article class="verstka-legacy-article" data-verstka-legacy-article>{{ article_html|safe }}</article>
+{% endif %}
 {% if footer_html %}
   <div class="site-footer" data-site-footer>{{ footer_html|safe }}</div>
 {% endif %}
+{% if viewer_bootstrap_enabled %}
   <script>
-    window.onVMSAPIReady = function (api) {
-      api.Article.enable({ display_mode: 'default' });
-    };
+    window.__verstkaViewerOptions = {{ viewer_options_json|safe }};
   </script>
-  <script src="//go.verstka.org/api.js" async type="text/javascript"></script>
+  <script type="module">
+    import { initArticles } from "{{ viewer_script_url }}";
+
+    initArticles(document, window.__verstkaViewerOptions || {}).catch((error) => {
+      console.error("Failed to initialize Verstka articles", error);
+    });
+  </script>
+{% endif %}
 </body>
 </html>

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
         default="https://api-stage.verstka.org/integration",
         validation_alias="VERSTKA_API_URL",
     )
+    verstka_viewer_dev: bool = Field(default=True, validation_alias="VERSTKA_VIEWER_DEV")
 
     public_base_url: str = Field(default="http://127.0.0.1:8000", validation_alias="PUBLIC_BASE_URL")
     session_secret: str = Field(default="dev-secret-change-me", validation_alias="SESSION_SECRET")
@@ -53,9 +54,9 @@ class Settings(BaseSettings):
             return v.strip()
         return v
 
-    @field_validator("debug", mode="before")
+    @field_validator("debug", "verstka_viewer_dev", mode="before")
     @classmethod
-    def _coerce_debug(cls, v: Any) -> bool:
+    def _coerce_bool(cls, v: Any) -> bool:
         if isinstance(v, bool):
             return v
         if v is None:

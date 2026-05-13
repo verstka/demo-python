@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     await init_db(settings)
     publish.ensure_default_favicon(settings)
+    publish.ensure_viewer_asset(settings)
     await publish.write_sitemap(settings)
 
     vconf = VerstkaConfig(

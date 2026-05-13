@@ -71,6 +71,25 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Create an article with path **`/index`** for the home page (nginx redirects `/` → `/index/`).
 
+## Viewer assets and article rendering
+
+Published pages use the current Verstka viewer contract from the frontend repo:
+server-rendered article HTML is written as a **`vrstk-article`** root with its
+embedded JSON payload, and the page loads the vendored
+`/verstka-viewer/index.js` wrapper from `storage/`. That wrapper then loads
+`viewer-latest.js` and calls `initArticles(document)`.
+
+Refresh the vendored wrapper after changes in `/Volumes/git/verstka/frontend/verstka-viewer`:
+
+```bash
+python scripts/build_verstka_viewer_dist.py --frontend-root /Volumes/git/verstka/frontend
+```
+
+Use `--skip-build` to copy an already-built `verstka-viewer/dist/index.js`.
+Set `VERSTKA_VIEWER_DEV=1` for stage viewer runtime
+(`https://stage.verstka.org/viewer-latest.js`) or `0` for production runtime
+(`https://verstka.org/viewer-latest.js`).
+
 ## Nginx and static files
 
 Example config: [`staff/nginx.conf`](staff/nginx.conf).
@@ -86,7 +105,10 @@ Example unit file: [`staff/demo-cms.service.example`](staff/demo-cms.service.exa
 
 ## Reserved article paths
 
-You cannot create articles with an empty path, **`/cms`**, or **`/fonts`**. The **`storage/fonts/`** directory is reserved for Verstka fonts; the article template links **`/fonts/fonts.css`** when that file exists.
+You cannot create articles with an empty path, **`/cms`**, **`/fonts`**, or
+**`/verstka-viewer`**. The **`storage/fonts/`** directory is reserved for
+Verstka fonts; **`storage/verstka-viewer/`** is reserved for the vendored viewer
+wrapper; the article template links **`/fonts/fonts.css`** when that file exists.
 
 ## Layout
 
