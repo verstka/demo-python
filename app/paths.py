@@ -8,7 +8,7 @@ from pathlib import Path
 # Logical article path: leading slash, segments [a-zA-Z0-9/_-]+
 _PATH_RE = re.compile(r"^/[a-zA-Z0-9/_-]+$")
 
-_RESERVED_PREFIXES = ("/cms", "/fonts", "/verstka-viewer")
+_RESERVED_PREFIXES = ("/cms", "/fonts")
 _RESERVED_EXACT = frozenset({"", "/"})
 
 

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from pathlib import Path
 
 from app.config import Settings
-from app.paths import is_valid_article_path
-from app.services import publish, render
+from app.services import render
 
 
 CURRENT_ARTICLE_HTML = (
@@ -21,25 +19,19 @@ CURRENT_ARTICLE_HTML = (
 class ArticleRenderingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        root = Path(self.tmp.name)
-        static_dir = root / "static"
-        (static_dir / "verstka-viewer").mkdir(parents=True)
-        (static_dir / "verstka-viewer" / "index.js").write_text(
-            "export async function initArticles(){ return [] }\n",
-            encoding="utf-8",
-        )
+        root = self.tmp.name
         self.settings = Settings(
             VERSTKA_API_KEY="key",
             VERSTKA_API_SECRET="secret",
             VERSTKA_CALLBACK_URL="https://cms.example.test/verstka/callback",
             VERSTKA_API_URL="https://api-stage.verstka.org/integration",
+            VERSTKA_VIEWER_SCRIPT_URL="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js",
             VERSTKA_VIEWER_DEV="1",
             PUBLIC_BASE_URL="https://cms.example.test",
             SESSION_SECRET="test-secret",
-            DATABASE_URL=f"sqlite+aiosqlite:///{root / 'data.db'}",
+            DATABASE_URL=f"sqlite+aiosqlite:///{root}/data.db",
             ADMINS="{}",
-            storage_dir=root / "storage",
-            static_dir=static_dir,
+            storage_dir=f"{root}/storage",
         )
 
     def tearDown(self) -> None:
@@ -62,7 +54,9 @@ class ArticleRenderingTests(unittest.TestCase):
         )
 
         self.assertIn(CURRENT_ARTICLE_HTML, html)
-        self.assertIn('import { initArticles } from "/verstka-viewer/index.js";', html)
+        self.assertIn("https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js", html)
+        self.assertIn('type="module" src="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js"', html)
+        self.assertIn("import(", html)
         self.assertIn('"dev": true', html)
         self.assertNotIn("go.verstka.org/api.js", html)
         self.assertNotIn('class="verstka-article"', html)
@@ -86,17 +80,6 @@ class ArticleRenderingTests(unittest.TestCase):
         self.assertIn('class="verstka-legacy-article"', html)
         self.assertIn("<p>Legacy body</p>", html)
         self.assertNotIn("initArticles", html)
-
-    def test_viewer_asset_is_copied_to_storage(self) -> None:
-        publish.ensure_viewer_asset(self.settings)
-
-        copied = self.settings.storage_dir / "verstka-viewer" / "index.js"
-        self.assertTrue(copied.is_file())
-        self.assertIn("initArticles", copied.read_text(encoding="utf-8"))
-
-    def test_viewer_asset_path_is_reserved_for_articles(self) -> None:
-        self.assertFalse(is_valid_article_path("/verstka-viewer"))
-        self.assertFalse(is_valid_article_path("/verstka-viewer/index"))
 
 
 if __name__ == "__main__":

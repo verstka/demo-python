@@ -31,13 +31,14 @@
   <div class="site-footer" data-site-footer>{{ footer_html|safe }}</div>
 {% endif %}
 {% if viewer_bootstrap_enabled %}
+  <script type="module" src="{{ viewer_script_url|e }}" crossorigin="anonymous"></script>
   <script>
     window.__verstkaViewerOptions = {{ viewer_options_json|safe }};
   </script>
   <script type="module">
-    import { initArticles } from "{{ viewer_script_url }}";
-
-    initArticles(document, window.__verstkaViewerOptions || {}).catch((error) => {
+    import({{ viewer_script_url_json|safe }}).then(({ initArticles }) => {
+      return initArticles(document, window.__verstkaViewerOptions || {});
+    }).catch((error) => {
       console.error("Failed to initialize Verstka articles", error);
     });
   </script>

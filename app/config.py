@@ -25,6 +25,10 @@ class Settings(BaseSettings):
         default="https://api-stage.verstka.org/integration",
         validation_alias="VERSTKA_API_URL",
     )
+    verstka_viewer_script_url: str = Field(
+        default="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js",
+        validation_alias="VERSTKA_VIEWER_SCRIPT_URL",
+    )
     verstka_viewer_dev: bool = Field(default=True, validation_alias="VERSTKA_VIEWER_DEV")
 
     public_base_url: str = Field(default="http://127.0.0.1:8000", validation_alias="PUBLIC_BASE_URL")
@@ -46,7 +50,13 @@ class Settings(BaseSettings):
     def _coerce_path(cls, v: Any) -> Path:
         return Path(v) if v is not None else Path(".")
 
-    @field_validator("verstka_api_key", "verstka_api_secret", "verstka_callback_url", mode="before")
+    @field_validator(
+        "verstka_api_key",
+        "verstka_api_secret",
+        "verstka_callback_url",
+        "verstka_viewer_script_url",
+        mode="before",
+    )
     @classmethod
     def _strip_verstka_strings(cls, v: Any) -> Any:
         """Avoid invalid_signature from accidental spaces/newlines in .env."""

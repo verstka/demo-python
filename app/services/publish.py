@@ -15,8 +15,6 @@ from app.paths import storage_article_dir
 from app import repo
 from app.services import render
 
-VIEWER_ASSET_REL = "verstka-viewer/index.js"
-
 
 async def _menu_footer_blocks(settings: Settings, db: aiosqlite.Connection) -> tuple[str, str]:
     menu_row = await repo.article_by_path(db, "/menu")
@@ -31,7 +29,6 @@ async def _menu_footer_blocks(settings: Settings, db: aiosqlite.Connection) -> t
 
 
 async def write_article_index(settings: Settings, article: dict[str, Any], db: aiosqlite.Connection) -> None:
-    ensure_viewer_asset(settings)
     menu_html, footer_html = await _menu_footer_blocks(settings, db)
     fonts_ok = render.fonts_css_file_exists(settings)
     html = render.render_article_page(
@@ -112,12 +109,3 @@ def ensure_default_favicon(settings: Settings) -> None:
     settings.storage_dir.mkdir(parents=True, exist_ok=True)
     if not dst.exists() and src.is_file():
         shutil.copy2(src, dst)
-
-
-def ensure_viewer_asset(settings: Settings) -> None:
-    src = settings.static_dir / VIEWER_ASSET_REL
-    dst = settings.storage_dir / VIEWER_ASSET_REL
-    if not src.is_file():
-        raise FileNotFoundError(f"Missing vendored Verstka viewer asset: {src}")
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)

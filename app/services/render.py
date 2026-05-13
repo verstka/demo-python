@@ -9,8 +9,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.config import Settings
 
-VIEWER_SCRIPT_URL = "/verstka-viewer/index.js"
-
 
 def _jinja_env(settings: Settings) -> Environment:
     return Environment(
@@ -58,7 +56,8 @@ def render_article_page(
         fonts_css_exists=fonts_css_exists,
         canonical_url=f"{base}{article['path']}/",
         viewer_bootstrap_enabled=viewer_bootstrap_enabled,
-        viewer_script_url=VIEWER_SCRIPT_URL,
+        viewer_script_url=settings.verstka_viewer_script_url,
+        viewer_script_url_json=json.dumps(settings.verstka_viewer_script_url),
         viewer_options_json=json.dumps({"dev": True} if settings.verstka_viewer_dev else {}),
     )
 
