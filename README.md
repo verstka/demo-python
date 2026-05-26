@@ -45,7 +45,9 @@ Must match the public URL of the SDK callback endpoint, for example:
 
 `https://your-domain/verstka/callback`
 
-(the `/verstka` prefix matches `build_callback_router` by default.)
+The shared `/verstka/callback` endpoint accepts both article-save callbacks and
+`site_fonts_updated` callbacks. Font events are dispatched to the SDK fonts
+processor internally.
 
 For local development, `VERSTKA_CALLBACK_URL=http://127.0.0.1:8000/verstka/callback`
 can boot the CMS but may not be accepted by Verstka API keys. If `session/open`
@@ -55,7 +57,9 @@ uvicorn.
 
 ### `invalid_signature` on `POST /verstka/callback`
 
-The SDK checks `HMAC_SHA256(VERSTKA_API_SECRET, "{material_id}:{content_url}")` against the `signature` field in the JSON body (`content_url` comes from Verstka, not from your `VERSTKA_CALLBACK_URL`).
+The SDK checks `HMAC_SHA256(VERSTKA_API_SECRET, "{material_id}:{content_url}")`
+against the `X-Verstka-Signature` HTTP header (`content_url` comes from
+Verstka, not from your `VERSTKA_CALLBACK_URL`).
 
 1. Confirm **`VERSTKA_API_SECRET`** is exactly the secret for this API key in the Verstka dashboard (no copy/paste errors).
 2. **`VERSTKA_API_KEY`**, **`VERSTKA_API_SECRET`**, and **`VERSTKA_CALLBACK_URL`** are trimmed of leading/trailing whitespace when loaded from `.env`.

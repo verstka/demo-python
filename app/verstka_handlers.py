@@ -42,8 +42,10 @@ def build_verstka_hooks(settings: Settings):
 
     async def on_fonts_pre_save(ctx: FontsPreSaveContext) -> PreSaveDecision:
         email = str(ctx.metadata.get("user_email") or "").strip()
-        if not email or not _EMAIL_RE.fullmatch(email):
-            return PreSaveDecision(allow=False, reason="user_email required")
+        if not email:
+            return PreSaveDecision(allow=True)
+        if not _EMAIL_RE.fullmatch(email):
+            return PreSaveDecision(allow=False, reason="invalid user_email")
         async with get_connection(settings) as db:
             if not await repo.cms_user_exists(db, email):
                 return PreSaveDecision(allow=False, reason="user not in cms_users")

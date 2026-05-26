@@ -11,6 +11,15 @@ Keep the demo self-contained. The local frontend repository path is useful
 context, but runtime code in this repo must not depend on that path being
 present on the target server.
 
+## Interaction Rule
+
+- Follow the project-level ask-first policy in `ASK_FIRST.md`.
+- Before making changes, running non-read-only commands, installing or updating
+  dependencies, starting services, or otherwise acting on the project, ask the
+  user what exactly needs to be done and wait for their answer.
+- Read-only inspection is allowed only when needed to understand the user's
+  question, and any follow-up action should still be confirmed first.
+
 ## Application Shape
 
 - FastAPI app entrypoint: `app/main.py`.
@@ -108,4 +117,3 @@ files appear or disappear under `storage/`.
   behavior as well as the rendered article file.
 - When changing CMS forms, keep the server-side validations in place; templates
   are not a security boundary.
-

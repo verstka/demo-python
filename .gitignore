@@ -11,3 +11,6 @@ dist/
 build/
 app/.cursorrules
 .DS_Store
+AGENTS.md
+ASK_FIRST.md
+README.md
