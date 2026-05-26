@@ -40,7 +40,7 @@
         <td>{% if a.is_visible %}yes{% else %}no{% endif %}</td>
         <td>
           <div class="row">
-            <a href="/cms/articles/open?path={{ a.path_q }}">Verstka editor</a>
+            <a href="/cms/articles/open?path={{ a.path_q }}" target="_blank" rel="noopener noreferrer">Verstka editor</a>
             <form method="post" action="/cms/articles/visibility" style="display:inline">
               <input type="hidden" name="path" value="{{ a.path }}">
               <input type="hidden" name="is_visible" value="{{ 0 if a.is_visible else 1 }}">
