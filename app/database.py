@@ -52,7 +52,6 @@ async def init_db(settings: Settings) -> None:
     async with aiosqlite.connect(path) as db:
         await db.executescript(SCHEMA_SQL)
         await _migrate_cms_users_username_to_user_email(db)
-        await _seed_admins_if_empty(db, settings)
         await db.commit()
 
 
@@ -66,21 +65,6 @@ async def _migrate_cms_users_username_to_user_email(db: aiosqlite.Connection) ->
     if "username" not in cols:
         return
     await db.execute("ALTER TABLE cms_users RENAME COLUMN username TO user_email")
-
-
-async def _seed_admins_if_empty(db: aiosqlite.Connection, settings: Settings) -> None:
-    cur = await db.execute("SELECT COUNT(*) FROM cms_users")
-    row = await cur.fetchone()
-    if row and row[0] > 0:
-        return
-    admins = settings.admins_seed()
-    if not admins:
-        return
-    for user_email, password_hash in admins.items():
-        await db.execute(
-            "INSERT OR IGNORE INTO cms_users (user_email, password_hash) VALUES (?, ?)",
-            (user_email, password_hash),
-        )
 
 
 @asynccontextmanager

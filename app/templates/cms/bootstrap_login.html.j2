@@ -15,13 +15,13 @@
 </head>
 <body>
   <h1>First administrator</h1>
-  <p>The <code>ADMINS</code> environment variable has no users. Create the first administrator — only an argon2 password hash will be written to <code>.env</code>.</p>
+  <p>No CMS users exist yet. Create the first administrator; only an argon2 password hash will be stored in SQLite.</p>
   {% if error %}<p class="err">{{ error }}</p>{% endif %}
   <form method="post" action="/cms/login">
     <label>Email <input name="user_email" type="email" required autocomplete="username"></label>
     <label>Password <input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
-    <p class="hint">After saving, restart the application (for example <code>systemctl restart …</code>) so settings reload and the user is imported into the database.</p>
-    <button type="submit">Save to .env</button>
+    <p class="hint">After creation, you will be signed in immediately.</p>
+    <button type="submit">Create administrator</button>
   </form>
 </body>
 </html>

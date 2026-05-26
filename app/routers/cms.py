@@ -18,7 +18,6 @@ from verstka_sdk import VerstkaApiError, VerstkaError
 
 from app.config import Settings, get_settings
 from app.database import get_connection
-from app.env_bootstrap import default_dotenv_path, merge_admins_into_dotenv
 from app.paths import is_valid_article_path, normalize_article_path, storage_article_dir
 from app import repo
 from app.services import publish
@@ -93,9 +92,7 @@ async def _verify_login(settings: Settings, user_email: str, password: str) -> b
 
 
 async def _is_bootstrap_required(settings: Settings) -> bool:
-    """True when ADMINS is empty and cms_users has no rows (first deploy without .env users)."""
-    if settings.admins_seed():
-        return False
+    """True when cms_users has no rows yet."""
     async with get_connection(settings) as db:
         n = await repo.count_cms_users(db)
     return n == 0
@@ -108,19 +105,6 @@ _MIN_BOOTSTRAP_PASSWORD_LEN = 8
 async def login_form(request: Request, settings: Settings = Depends(get_settings)) -> Any:
     if request.session.get("user_email"):
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
-
-    pending_restart_email = request.session.get("bootstrap_pending_restart")
-    if pending_restart_email:
-        async with get_connection(settings) as db:
-            seeded = await repo.count_cms_users(db) > 0
-        if seeded:
-            request.session.pop("bootstrap_pending_restart", None)
-        else:
-            return _templates(settings).TemplateResponse(
-                request,
-                "cms/bootstrap_done.html.j2",
-                {"request": request, "user_email": str(pending_restart_email)},
-            )
 
     if await _is_bootstrap_required(settings):
         return _templates(settings).TemplateResponse(
@@ -161,17 +145,11 @@ async def login_post(
                 },
                 status_code=400,
             )
-        merge_admins_into_dotenv(
-            dotenv_path=default_dotenv_path(),
-            admins={email: _ph.hash(password)},
-        )
-        get_settings.cache_clear()
-        request.session["bootstrap_pending_restart"] = email
-        return _templates(settings).TemplateResponse(
-            request,
-            "cms/bootstrap_done.html.j2",
-            {"request": request, "user_email": email},
-        )
+        async with get_connection(settings) as db:
+            await repo.insert_cms_user(db, email, _ph.hash(password))
+            await db.commit()
+        request.session["user_email"] = email
+        return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
     if not _is_valid_email(email):
         return _templates(settings).TemplateResponse(

@@ -42,7 +42,6 @@ class EditorOpenTests(unittest.TestCase):
             PUBLIC_BASE_URL="https://cms.example.test",
             SESSION_SECRET="test-secret",
             DATABASE_URL=f"sqlite+aiosqlite:///{root / 'data.db'}",
-            ADMINS="{}",
             storage_dir=root / "storage",
         )
         asyncio.run(self._seed_db())

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -37,9 +36,6 @@ class Settings(BaseSettings):
 
     # When true, logs each HTTP request/response (headers + body preview) to stdout — dev only.
     debug: bool = Field(default=False, validation_alias="DEBUG")
-
-    # JSON string in .env: {"user":"$argon2id$..."}
-    admins_json: str = Field(default="{}", validation_alias="ADMINS")
 
     storage_dir: Path = Field(default=Path("storage"))
     templates_dir: Path = Field(default=Path(__file__).resolve().parent / "templates")
@@ -76,15 +72,6 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v.strip().lower() in ("1", "true", "yes", "on")
         return bool(v)
-
-    def admins_seed(self) -> dict[str, str]:
-        raw = (self.admins_json or "{}").strip()
-        if not raw:
-            return {}
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            raise ValueError("ADMINS must be a JSON object")
-        return {str(k): str(v) for k, v in data.items()}
 
 
 @lru_cache

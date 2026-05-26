@@ -23,21 +23,14 @@ Copy `.env.example` to `.env` and fill in the variables.
 
 Set **`DEBUG=1`** (or `true` / `yes` / `on`) to log each HTTP request and response to **stdout**: method, path, query, request headers, request body preview, response status, response headers, and response body preview (first 16 KiB per direction). **Do not enable in production** — logs may contain cookies, `Authorization`, form passwords, and API secrets. Restart the app after changing `DEBUG`.
 
-### First run without `ADMINS`
+### First admin
 
-If **`ADMINS`** in `.env` has **no users** (empty object `{}` or the variable is missing) and the **`cms_users`** table is empty, opening **`/cms/login`** shows a form to create the first administrator: email and password are written to **`ADMINS`** as an argon2 hash only. Then **restart the application** (`systemctl restart …` or restart the worker) so the process reloads the environment and imports the user into SQLite on startup. Then sign in at **`/cms/login`** with the same credentials.
+If the **`cms_users`** table is empty, opening **`/cms/login`** shows a form to create the first administrator. The email and an argon2 password hash are written directly to SQLite, then the administrator is signed in immediately. No `.env` password seed or restart is required.
 
-### `ADMINS` and Verstka `user_email`
+### CMS users and Verstka `user_email`
 
 - The **`cms_users`** table is the single source of admins for `/cms` and for **`on_content_pre_save`**: **`metadata["user_email"]`** in the Verstka callback must match **`cms_users.user_email`**.
-- On startup, if **`cms_users`** is empty, rows are imported from **`ADMINS`** in `.env` (JSON: `user_email` → **argon2** hash).
 - In the Verstka editor, set the author email field to the **same email** as in the CMS.
-
-Generate a password hash for `.env`:
-
-```bash
-python -c "from argon2 import PasswordHasher; print(PasswordHasher().hash('yourpassword'))"
-```
 
 ### `VERSTKA_CALLBACK_URL`
 

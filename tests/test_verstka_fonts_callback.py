@@ -32,7 +32,6 @@ class FontsCallbackTests(unittest.TestCase):
             PUBLIC_BASE_URL="https://cms.example.test",
             SESSION_SECRET="test-secret",
             DATABASE_URL=f"sqlite+aiosqlite:///{self.root / 'data.db'}",
-            ADMINS="{}",
             storage_dir=self.root / "storage",
         )
         asyncio.run(init_db(self.settings))

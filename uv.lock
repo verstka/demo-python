@@ -841,15 +841,15 @@ wheels = [
 
 [[package]]
 name = "verstka-sdk"
-version = "0.1.5"
+version = "0.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/01/0a9b974284475aa67c2ebe420f5861940ed2c942f4b172af26a93976880c/verstka_sdk-0.1.5.tar.gz", hash = "sha256:688affdf200de21046d714fbd994365d7ef97539017075f8c1c7dc808b9cb768", size = 42212, upload-time = "2026-05-26T18:01:20.538Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/3d/98906327d6a04802724e65753af3dafb27396050f28dc7a028b4ab39180b/verstka_sdk-0.1.6.tar.gz", hash = "sha256:44f9b86ef0415c875409dffa7cc586bb92510da0be412d3132862f45a6bef614", size = 42478, upload-time = "2026-05-26T19:44:31.6Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/0e/ca5fba589d3dde03ba47ce2c482978f33c5589b0301e107e7957812679d8/verstka_sdk-0.1.5-py3-none-any.whl", hash = "sha256:54188deb3cdd0d91635d67f7420eb9d8965bdf7e5ebd49f9af72c93b954b5a30", size = 37890, upload-time = "2026-05-26T18:01:19.381Z" },
+    { url = "https://files.pythonhosted.org/packages/42/c1/af422f72bd8ade008003669dff63818ea9d6c093df87cb6a99ce3a26c3d4/verstka_sdk-0.1.6-py3-none-any.whl", hash = "sha256:fbea7840c80ede9f6c58f2ea05c006b7157ddf91fdbd7d519c93f74cb4ca5814", size = 38052, upload-time = "2026-05-26T19:44:30.505Z" },
 ]
 
 [package.optional-dependencies]
