@@ -21,12 +21,12 @@ from app.database import get_connection
 from app.paths import is_valid_article_path, normalize_article_path, storage_article_dir
 from app import repo
 from app.services import publish
+from app.validation import is_valid_email
 
 router = APIRouter(prefix="/cms", tags=["cms"])
 _ph = PasswordHasher()
 
 _ALLOWED_OG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-_EMAIL_RE = __import__("re").compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def _templates(settings: Settings) -> Jinja2Templates:
@@ -38,10 +38,6 @@ def _auth_or_redirect(request: Request) -> str | RedirectResponse:
     if not u:
         return RedirectResponse("/cms/login", status_code=HTTP_303_SEE_OTHER)
     return str(u)
-
-
-def _is_valid_email(value: str) -> bool:
-    return bool(_EMAIL_RE.fullmatch(value.strip()))
 
 
 def _editor_config_error(settings: Settings) -> str | None:
@@ -128,7 +124,7 @@ async def login_post(
 ) -> Any:
     email = user_email.strip()
     if await _is_bootstrap_required(settings):
-        if not _is_valid_email(email):
+        if not is_valid_email(email):
             return _templates(settings).TemplateResponse(
                 request,
                 "cms/bootstrap_login.html.j2",
@@ -151,7 +147,7 @@ async def login_post(
         request.session["user_email"] = email
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
-    if not _is_valid_email(email):
+    if not is_valid_email(email):
         return _templates(settings).TemplateResponse(
             request,
             "cms/login.html.j2",
@@ -218,10 +214,9 @@ async def articles_create(
     p = normalize_article_path(path)
     if not is_valid_article_path(p):
         raise HTTPException(400, "Недопустимый или зарезервированный путь")
-    row: dict[str, Any] | None = None
     async with get_connection(settings) as db:
         try:
-            await repo.insert_article(
+            row = await repo.insert_article(
                 db,
                 path=p,
                 title=title.strip() or p,
@@ -230,17 +225,10 @@ async def articles_create(
                 og_image_relpath=None,
                 is_visible=True,
             )
-            row = await repo.article_by_path(db, p)
+            await publish.publish_article_change(settings, row, db=db)
             await db.commit()
         except Exception as exc:
             raise HTTPException(400, str(exc)) from exc
-    if row and row.get("is_visible"):
-        async with get_connection(settings) as db2:
-            await publish.write_article_index(settings, row, db2)
-            await db2.commit()
-        if p in ("/menu", "/footer"):
-            await publish.regenerate_all_visible_indexes(settings)
-    await publish.write_sitemap(settings)
     return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
 
@@ -321,14 +309,8 @@ async def articles_og(
             og_image_relpath=rel_img,
         )
         row = await repo.article_by_path(db, p)
+        await publish.publish_article_change(settings, row, db=db)
         await db.commit()
-    if row and row.get("is_visible"):
-        async with get_connection(settings) as db2:
-            await publish.write_article_index(settings, row, db2)
-            await db2.commit()
-        if p in ("/menu", "/footer"):
-            await publish.regenerate_all_visible_indexes(settings)
-    await publish.write_sitemap(settings)
     return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
 
@@ -423,7 +405,7 @@ async def users_create(
     if isinstance(auth, RedirectResponse):
         return auth
     email = user_email.strip()
-    if not _is_valid_email(email) or not password:
+    if not is_valid_email(email) or not password:
         raise HTTPException(400)
     async with get_connection(settings) as db:
         if await repo.get_cms_user(db, email):

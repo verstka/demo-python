@@ -19,19 +19,17 @@ from app.config import Settings
 from app.database import get_connection
 from app import repo
 from app.services.publish import (
+    publish_article_change,
     regenerate_all_visible_indexes,
-    remove_article_index,
-    write_article_index,
     write_sitemap,
 )
-
-_EMAIL_RE = __import__("re").compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+from app.validation import is_valid_email
 
 
 def build_verstka_hooks(settings: Settings):
     async def on_content_pre_save(ctx: ContentPreSaveContext) -> PreSaveDecision:
         email = str(ctx.metadata.get("user_email") or "").strip()
-        if not email or not _EMAIL_RE.fullmatch(email):
+        if not email or not is_valid_email(email):
             return PreSaveDecision(allow=False, reason="user_email required")
         async with get_connection(settings) as db:
             if not await repo.cms_user_exists(db, email):
@@ -44,7 +42,7 @@ def build_verstka_hooks(settings: Settings):
         email = str(ctx.metadata.get("user_email") or "").strip()
         if not email:
             return PreSaveDecision(allow=True)
-        if not _EMAIL_RE.fullmatch(email):
+        if not is_valid_email(email):
             return PreSaveDecision(allow=False, reason="invalid user_email")
         async with get_connection(settings) as db:
             if not await repo.cms_user_exists(db, email):
@@ -62,21 +60,7 @@ def build_verstka_hooks(settings: Settings):
             )
             row = await repo.article_by_material_id(db, ctx.material_id)
             await db.commit()
-        if not row:
-            await write_sitemap(settings)
-            return ContentFinalizeResult(success=True, vms_json=ctx.vms_json)
-        path = row["path"]
-        is_menu_footer = path in ("/menu", "/footer")
-        visible = bool(row.get("is_visible"))
-        if is_menu_footer and visible:
-            await regenerate_all_visible_indexes(settings)
-        elif visible:
-            async with get_connection(settings) as db2:
-                await write_article_index(settings, row, db2)
-                await db2.commit()
-        elif not visible:
-            await remove_article_index(settings, path)
-        await write_sitemap(settings)
+        await publish_article_change(settings, row, remove_if_hidden=True)
         return ContentFinalizeResult(success=True, vms_json=ctx.vms_json)
 
     async def on_fonts_finalize(ctx: FontsFinalizeContext) -> FontsFinalizeResult:

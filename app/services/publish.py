@@ -16,7 +16,7 @@ from app import repo
 from app.services import render
 
 
-async def _menu_footer_blocks(settings: Settings, db: aiosqlite.Connection) -> tuple[str, str]:
+async def _menu_footer_blocks(db: aiosqlite.Connection) -> tuple[str, str]:
     menu_row = await repo.article_by_path(db, "/menu")
     footer_row = await repo.article_by_path(db, "/footer")
     menu_html = ""
@@ -28,8 +28,60 @@ async def _menu_footer_blocks(settings: Settings, db: aiosqlite.Connection) -> t
     return menu_html, footer_html
 
 
+async def _write_article_index_with_db(
+    settings: Settings,
+    row: dict[str, Any],
+    db: aiosqlite.Connection | None,
+) -> None:
+    if db is not None:
+        await write_article_index(settings, row, db)
+        return
+    async with get_connection(settings) as conn:
+        await write_article_index(settings, row, conn)
+        await conn.commit()
+
+
+async def publish_article_change(
+    settings: Settings,
+    row: dict[str, Any] | None,
+    *,
+    db: aiosqlite.Connection | None = None,
+    remove_if_hidden: bool = False,
+) -> None:
+    """Publish one article to disk and refresh sitemap.
+
+    CMS routes pass remove_if_hidden=False: visible articles are written, and
+    /menu or /footer changes trigger a full visible regen.
+
+    Verstka finalize passes remove_if_hidden=True: hidden articles are removed
+    from disk; visible /menu or /footer only trigger full regen.
+    """
+    if not row:
+        await write_sitemap(settings)
+        return
+
+    path = row["path"]
+    visible = bool(row.get("is_visible"))
+    is_menu_footer = path in ("/menu", "/footer")
+
+    if not visible:
+        if remove_if_hidden:
+            await remove_article_index(settings, path)
+        await write_sitemap(settings)
+        return
+
+    if remove_if_hidden and is_menu_footer:
+        await regenerate_all_visible_indexes(settings)
+    else:
+        await _write_article_index_with_db(settings, row, db)
+        if is_menu_footer:
+            await regenerate_all_visible_indexes(settings)
+
+    await write_sitemap(settings)
+
+
 async def write_article_index(settings: Settings, article: dict[str, Any], db: aiosqlite.Connection) -> None:
-    menu_html, footer_html = await _menu_footer_blocks(settings, db)
+    menu_html, footer_html = await _menu_footer_blocks(db)
     fonts_ok = render.fonts_css_file_exists(settings)
     html = render.render_article_page(
         settings,

@@ -52,7 +52,3 @@ def path_to_storage_relative(article_path: str) -> str:
 def storage_article_dir(storage_root: Path, article_path: str) -> Path:
     rel = path_to_storage_relative(article_path)
     return (storage_root / rel).resolve()
-
-
-def storage_fonts_dir(storage_root: Path) -> Path:
-    return (storage_root / "fonts").resolve()

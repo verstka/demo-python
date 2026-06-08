@@ -41,13 +41,14 @@ def render_article_page(
         norm = p.lstrip("/")
         og_image = f"{base}/{norm}/{rel}" if not str(rel).startswith("http") else rel
     body_html = article.get("html") or ""
-    viewer_bootstrap_enabled = any(
-        is_current_verstka_article_html(html) for html in (body_html, menu_html, footer_html)
+    article_is_current_verstka_html = is_current_verstka_article_html(body_html)
+    viewer_bootstrap_enabled = article_is_current_verstka_html or any(
+        is_current_verstka_article_html(html) for html in (menu_html, footer_html)
     )
     return tpl.render(
         title=article.get("title") or article["path"],
         article_html=body_html,
-        article_is_current_verstka_html=is_current_verstka_article_html(body_html),
+        article_is_current_verstka_html=article_is_current_verstka_html,
         menu_html=menu_html,
         footer_html=footer_html,
         og_title=article.get("og_title") or article.get("title") or "",

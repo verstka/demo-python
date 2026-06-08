@@ -1,20 +1,12 @@
 from __future__ import annotations
 
-import asyncio
 import tempfile
 import unittest
 from pathlib import Path
 
 import httpx
-from argon2 import PasswordHasher
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from starlette.middleware.sessions import SessionMiddleware
 
-from app import repo
-from app.config import Settings, get_settings
-from app.database import get_connection, init_db
-from app.routers import cms
+from tests.support import build_cms_test_app, make_test_settings, run_async, seed_admin_and_article
 
 
 class FakeVerstkaClient:
@@ -33,47 +25,14 @@ class FakeVerstkaClient:
 class EditorOpenTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        root = Path(self.tmp.name)
-        self.settings = Settings(
-            VERSTKA_API_KEY="key",
-            VERSTKA_API_SECRET="secret",
-            VERSTKA_CALLBACK_URL="https://cms.example.test/verstka/callback",
-            VERSTKA_API_URL="https://api-stage.verstka.org/integration",
-            PUBLIC_BASE_URL="https://cms.example.test",
-            SESSION_SECRET="test-secret",
-            DATABASE_URL=f"sqlite+aiosqlite:///{root / 'data.db'}",
-            storage_dir=root / "storage",
-        )
-        asyncio.run(self._seed_db())
+        self.settings = make_test_settings(Path(self.tmp.name))
+        run_async(seed_admin_and_article(self.settings))
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    async def _seed_db(self) -> None:
-        await init_db(self.settings)
-        async with get_connection(self.settings) as db:
-            await repo.insert_cms_user(
-                db,
-                "admin@example.test",
-                PasswordHasher().hash("password123"),
-            )
-            await repo.insert_article(
-                db,
-                path="/hi",
-                title="Hello",
-                og_title=None,
-                og_description=None,
-                og_image_relpath=None,
-            )
-            await db.commit()
-
-    def _client(self, fake_client: FakeVerstkaClient) -> TestClient:
-        app = FastAPI()
-        app.add_middleware(SessionMiddleware, secret_key="test-secret")
-        app.include_router(cms.router)
-        app.state.verstka_client = fake_client
-        app.dependency_overrides[get_settings] = lambda: self.settings
-        client = TestClient(app, follow_redirects=False)
+    def _logged_in_client(self, fake_client: FakeVerstkaClient):
+        client = build_cms_test_app(self.settings, verstka_client=fake_client)
         response = client.post(
             "/cms/login",
             data={"user_email": "admin@example.test", "password": "password123"},
@@ -83,7 +42,7 @@ class EditorOpenTests(unittest.TestCase):
 
     def test_open_editor_redirects_and_includes_logged_in_email_metadata(self) -> None:
         fake = FakeVerstkaClient()
-        client = self._client(fake)
+        client = self._logged_in_client(fake)
 
         response = client.get("/cms/articles/open?path=%2Fhi")
 
@@ -96,7 +55,7 @@ class EditorOpenTests(unittest.TestCase):
             "could not resolve host",
             request=httpx.Request("POST", "https://api-stage.verstka.org/integration/session/open"),
         )
-        client = self._client(FakeVerstkaClient(error=error))
+        client = self._logged_in_client(FakeVerstkaClient(error=error))
 
         response = client.get("/cms/articles/open?path=%2Fhi")
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import shutil
 import tempfile
 import unittest
@@ -8,33 +7,18 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from verstka_sdk import AsyncVerstkaClient, VerstkaConfig
-from verstka_sdk.integrations.fastapi import build_callback_router, install_exception_handlers
 from verstka_sdk.signatures import sign_material
 
-from app.config import Settings
 from app.database import init_db
-from app.verstka_handlers import build_verstka_hooks
-from app.verstka_storage import CmsVerstkaStorage
+from tests.support import build_verstka_callback_client, make_test_settings, run_async
 
 
 class FontsCallbackTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.settings = Settings(
-            VERSTKA_API_KEY="key",
-            VERSTKA_API_SECRET="secret",
-            VERSTKA_CALLBACK_URL="https://cms.example.test/verstka/callback",
-            VERSTKA_API_URL="https://api-stage.verstka.org/integration",
-            PUBLIC_BASE_URL="https://cms.example.test",
-            SESSION_SECRET="test-secret",
-            DATABASE_URL=f"sqlite+aiosqlite:///{self.root / 'data.db'}",
-            storage_dir=self.root / "storage",
-        )
-        asyncio.run(init_db(self.settings))
+        self.settings = make_test_settings(self.root)
+        run_async(init_db(self.settings))
         self.zip_path = self.root / "fonts.zip"
         with zipfile.ZipFile(self.zip_path, "w") as zf:
             zf.writestr("vms_fonts/Inter.woff", b"woff-data")
@@ -48,32 +32,6 @@ class FontsCallbackTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
-
-    def _client(self) -> TestClient:
-        client = AsyncVerstkaClient(
-            VerstkaConfig(
-                api_key=self.settings.verstka_api_key,
-                api_secret=self.settings.verstka_api_secret,
-                callback_url=self.settings.verstka_callback_url,
-                api_url=self.settings.verstka_api_url,
-                debug=True,
-            )
-        )
-        storage = CmsVerstkaStorage(self.settings)
-        pre_c, pre_f, fin_c, fin_f = build_verstka_hooks(self.settings)
-        app = FastAPI()
-        install_exception_handlers(app)
-        app.include_router(
-            build_callback_router(
-                client,
-                storage=storage,
-                on_content_finalize=fin_c,
-                on_fonts_finalize=fin_f,
-                on_content_pre_save=pre_c,
-                on_fonts_pre_save=pre_f,
-            )
-        )
-        return TestClient(app)
 
     def test_site_fonts_callback_without_user_metadata_saves_font_files(self) -> None:
         material_id = "site-fonts"
@@ -106,7 +64,7 @@ class FontsCallbackTests(unittest.TestCase):
             shutil.copy2(self.zip_path, dest_path)
 
         with patch("verstka_sdk.callbacks.download_zip_async", fake_download_zip):
-            response = self._client().post(
+            response = build_verstka_callback_client(self.settings).post(
                 "/verstka/callback",
                 json=payload,
                 headers={"X-Verstka-Signature": signature},
@@ -122,7 +80,10 @@ class FontsCallbackTests(unittest.TestCase):
         self.assertTrue((fonts_dir / "vms_fonts.json").is_file())
         self.assertTrue((fonts_dir / "vms_fonts.css").is_file())
         self.assertTrue((fonts_dir / "fonts.css").is_file())
-        self.assertIn("https://cms.example.test/fonts/Inter.woff2", (fonts_dir / "fonts.css").read_text())
+        self.assertIn(
+            "https://cms.example.test/fonts/Inter.woff2",
+            (fonts_dir / "fonts.css").read_text(),
+        )
 
 
 if __name__ == "__main__":

@@ -45,8 +45,6 @@ async def lifespan(app: FastAPI):
     )
     app.include_router(vr)
     app.state.verstka_client = client
-    app.state.settings = settings
-    app.state.storage = storage
     yield
     await client.aclose()
 

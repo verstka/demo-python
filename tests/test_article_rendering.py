@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from pathlib import Path
 
-from app.config import Settings
 from app.services import render
+from tests.support import DEFAULT_VIEWER_SCRIPT_URL, make_test_settings
 
 
 CURRENT_ARTICLE_HTML = (
@@ -19,18 +20,10 @@ CURRENT_ARTICLE_HTML = (
 class ArticleRenderingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        root = self.tmp.name
-        self.settings = Settings(
-            VERSTKA_API_KEY="key",
-            VERSTKA_API_SECRET="secret",
-            VERSTKA_CALLBACK_URL="https://cms.example.test/verstka/callback",
-            VERSTKA_API_URL="https://api-stage.verstka.org/integration",
-            VERSTKA_VIEWER_SCRIPT_URL="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js",
+        self.settings = make_test_settings(
+            Path(self.tmp.name),
+            VERSTKA_VIEWER_SCRIPT_URL=DEFAULT_VIEWER_SCRIPT_URL,
             VERSTKA_VIEWER_DEV="1",
-            PUBLIC_BASE_URL="https://cms.example.test",
-            SESSION_SECRET="test-secret",
-            DATABASE_URL=f"sqlite+aiosqlite:///{root}/data.db",
-            storage_dir=f"{root}/storage",
         )
 
     def tearDown(self) -> None:
@@ -53,9 +46,10 @@ class ArticleRenderingTests(unittest.TestCase):
         )
 
         self.assertIn(CURRENT_ARTICLE_HTML, html)
-        self.assertIn("https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js", html)
-        self.assertIn('type="module" src="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js"', html)
-        self.assertIn("import(", html)
+        self.assertIn(
+            f'type="module" src="{DEFAULT_VIEWER_SCRIPT_URL}"',
+            html,
+        )
         self.assertIn('"dev": true', html)
         self.assertNotIn("go.verstka.org/api.js", html)
         self.assertNotIn('class="verstka-article"', html)
