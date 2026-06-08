@@ -1,5 +1,9 @@
 # Change Log
 
+## 2026-06-08
+
+- Removed `/confs/` nginx route, `confs/` directory, and related README documentation (unrelated to CMS demo).
+
 ## 2026-04-24
 
 - Added nginx handling for `/confs/*.conf` in `staff/nginx.conf`, serving files from `/var/www/demo-cms/confs/`.

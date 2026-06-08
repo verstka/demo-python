@@ -95,7 +95,6 @@ Example config: [`staff/nginx.conf`](staff/nginx.conf).
 
 - **`root`** points at **`storage/`**, where the app writes `index.html`, article media, and `sitemap.xml` / `favicon.ico`.
 - **`/cms`** and **`/verstka/`** are proxied to uvicorn.
-- **`/confs/*.conf`** is served directly from the **`confs/`** directory.
 - **`/`** → **`/index/`**; articles are served with **`try_files`** and **`index.html`**.
 
 ## Autostart (systemd)
