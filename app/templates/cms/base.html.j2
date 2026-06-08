@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CMS{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem 2rem; max-width: 56rem; }
+    nav { margin-bottom: 1.5rem; }
+    nav a { margin-right: 1rem; }
+    fieldset { margin-top: 1.5rem; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% block nav %}
+  <nav>
+    <a href="/cms/articles">Articles</a>
+    <a href="/cms/users">Users</a>
+    <a href="/cms/logout">Sign out</a>
+  </nav>
+  {% endblock %}
+  {% block content %}{% endblock %}
+</body>
+</html>

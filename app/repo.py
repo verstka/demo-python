@@ -10,6 +10,12 @@ import aiosqlite
 
 from app.paths import is_valid_article_path, normalize_article_path
 
+_VISIBLE_ARTICLES_WHERE = """
+WHERE is_visible = 1
+  AND path NOT IN ('/menu', '/footer')
+ORDER BY path
+"""
+
 
 async def list_cms_users(db: aiosqlite.Connection) -> list[dict[str, Any]]:
     cur = await db.execute("SELECT user_email FROM cms_users ORDER BY user_email")
@@ -76,29 +82,16 @@ async def list_articles(db: aiosqlite.Connection) -> list[dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
-async def list_visible_article_paths_for_sitemap(db: aiosqlite.Connection) -> list[str]:
-    cur = await db.execute(
-        """
-        SELECT path FROM articles
-        WHERE is_visible = 1
-          AND path NOT IN ('/menu', '/footer')
-        ORDER BY path
-        """
-    )
+async def list_visible_articles(
+    db: aiosqlite.Connection,
+    *,
+    paths_only: bool = False,
+) -> list[Any]:
+    select = "SELECT path FROM articles" if paths_only else "SELECT * FROM articles"
+    cur = await db.execute(f"{select} {_VISIBLE_ARTICLES_WHERE}")
     rows = await cur.fetchall()
-    return [r[0] for r in rows]
-
-
-async def list_visible_articles_for_regen(db: aiosqlite.Connection) -> list[dict[str, Any]]:
-    cur = await db.execute(
-        """
-        SELECT * FROM articles
-        WHERE is_visible = 1
-          AND path NOT IN ('/menu', '/footer')
-        ORDER BY path
-        """
-    )
-    rows = await cur.fetchall()
+    if paths_only:
+        return [r[0] for r in rows]
     return [dict(r) for r in rows]
 
 
@@ -145,7 +138,7 @@ async def update_article_meta(
     og_description: str | None = None,
     og_image_relpath: str | None = None,
     is_visible: bool | None = None,
-) -> None:
+) -> dict[str, Any]:
     p = normalize_article_path(path)
     row = await article_by_path(db, p)
     if not row:
@@ -168,10 +161,11 @@ async def update_article_meta(
         fields.append("is_visible = ?")
         vals.append(1 if is_visible else 0)
     if not fields:
-        return
+        return row
     fields.append("updated_at = datetime('now')")
     vals.append(p)
     await db.execute(f"UPDATE articles SET {', '.join(fields)} WHERE path = ?", vals)
+    return (await article_by_path(db, p)) or {}
 
 
 async def update_article_from_verstka(
@@ -193,14 +187,6 @@ async def update_article_from_verstka(
 async def delete_article(db: aiosqlite.Connection, path: str) -> None:
     p = normalize_article_path(path)
     await db.execute("DELETE FROM articles WHERE path = ?", (p,))
-
-
-async def cms_user_exists(db: aiosqlite.Connection, user_email: str) -> bool:
-    cur = await db.execute(
-        "SELECT 1 FROM cms_users WHERE user_email = ? LIMIT 1",
-        (user_email,),
-    )
-    return await cur.fetchone() is not None
 
 
 def parse_vms_json(raw: str | None) -> dict[str, Any] | None:

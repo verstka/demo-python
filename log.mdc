@@ -2,7 +2,13 @@
 
 ## 2026-06-08
 
-- Tests: added `tests/support.py` with shared `make_test_settings`, `build_cms_test_app`, `build_verstka_callback_client`, `run_async`, `seed_admin_and_article`; refactored all four test modules to use it; trimmed redundant asserts in `test_article_rendering.py`.
+- Further reduction: `require_cms_user` / `CmsUser` Depends in `app/routers/cms.py` (removed auth boilerplate from protected routes); merged `bootstrap_login.html.j2` into `login.html.j2` with `bootstrap` flag; added `cms/base.html.j2` for shared nav/CSS in articles/users templates.
+- Repo: unified `list_visible_articles(db, paths_only=...)`; removed `cms_user_exists` (use `get_cms_user`); `update_article_meta` now returns updated row.
+- Publish: added `publish_article_removed`; `sync_visibility_to_disk` delegates to `publish_article_change` for non-menu/footer paths.
+
+## 2026-06-08 (refactor)
+
+- Tests: added `tests/support.py` with shared helpers; refactored all four test modules; trimmed redundant asserts in `test_article_rendering.py`.
 - Publish: added `publish_article_change` and `_write_article_index_with_db` in `app/services/publish.py`; replaced duplicate publish blocks in `app/routers/cms.py` and `app/verstka_handlers.py`; `articles_create` now uses return value of `repo.insert_article`.
 - Validation: added `app/validation.py` with shared `is_valid_email`; removed duplicate regex from `cms.py` and `verstka_handlers.py`.
 - Cleanup: removed unused `storage_fonts_dir` from `app/paths.py`; removed unused `app.state.settings` / `app.state.storage` from `app/main.py`; dropped unused `settings` param from `_menu_footer_blocks`; avoided double `is_current_verstka_article_html` call in `app/services/render.py`.

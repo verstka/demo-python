@@ -32,7 +32,7 @@ def build_verstka_hooks(settings: Settings):
         if not email or not is_valid_email(email):
             return PreSaveDecision(allow=False, reason="user_email required")
         async with get_connection(settings) as db:
-            if not await repo.cms_user_exists(db, email):
+            if not await repo.get_cms_user(db, email):
                 return PreSaveDecision(allow=False, reason="user not in cms_users")
             if not await repo.article_by_material_id(db, ctx.material_id):
                 return PreSaveDecision(allow=False, reason="unknown material")
@@ -45,7 +45,7 @@ def build_verstka_hooks(settings: Settings):
         if not is_valid_email(email):
             return PreSaveDecision(allow=False, reason="invalid user_email")
         async with get_connection(settings) as db:
-            if not await repo.cms_user_exists(db, email):
+            if not await repo.get_cms_user(db, email):
                 return PreSaveDecision(allow=False, reason="user not in cms_users")
         return PreSaveDecision(allow=True)
 

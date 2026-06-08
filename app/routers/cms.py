@@ -27,17 +27,37 @@ router = APIRouter(prefix="/cms", tags=["cms"])
 _ph = PasswordHasher()
 
 _ALLOWED_OG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+_MIN_BOOTSTRAP_PASSWORD_LEN = 8
 
 
 def _templates(settings: Settings) -> Jinja2Templates:
     return Jinja2Templates(directory=str(settings.templates_dir))
 
 
-def _auth_or_redirect(request: Request) -> str | RedirectResponse:
-    u = request.session.get("user_email")
-    if not u:
+def require_cms_user(request: Request) -> str:
+    user_email = request.session.get("user_email")
+    if not user_email:
         return RedirectResponse("/cms/login", status_code=HTTP_303_SEE_OTHER)
-    return str(u)
+    return str(user_email)
+
+
+CmsUser = Annotated[str, Depends(require_cms_user)]
+
+
+def _login_page(
+    request: Request,
+    settings: Settings,
+    *,
+    bootstrap: bool,
+    error: str | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    return _templates(settings).TemplateResponse(
+        request,
+        "cms/login.html.j2",
+        {"request": request, "bootstrap": bootstrap, "error": error},
+        status_code=status_code,
+    )
 
 
 def _editor_config_error(settings: Settings) -> str | None:
@@ -88,31 +108,15 @@ async def _verify_login(settings: Settings, user_email: str, password: str) -> b
 
 
 async def _is_bootstrap_required(settings: Settings) -> bool:
-    """True when cms_users has no rows yet."""
     async with get_connection(settings) as db:
-        n = await repo.count_cms_users(db)
-    return n == 0
-
-
-_MIN_BOOTSTRAP_PASSWORD_LEN = 8
+        return await repo.count_cms_users(db) == 0
 
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request, settings: Settings = Depends(get_settings)) -> Any:
     if request.session.get("user_email"):
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
-
-    if await _is_bootstrap_required(settings):
-        return _templates(settings).TemplateResponse(
-            request,
-            "cms/bootstrap_login.html.j2",
-            {"request": request, "error": None},
-        )
-    return _templates(settings).TemplateResponse(
-        request,
-        "cms/login.html.j2",
-        {"request": request, "error": None},
-    )
+    return _login_page(request, settings, bootstrap=await _is_bootstrap_required(settings))
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -123,22 +127,16 @@ async def login_post(
     settings: Settings = Depends(get_settings),
 ) -> Any:
     email = user_email.strip()
-    if await _is_bootstrap_required(settings):
+    bootstrap = await _is_bootstrap_required(settings)
+    if bootstrap:
         if not is_valid_email(email):
-            return _templates(settings).TemplateResponse(
-                request,
-                "cms/bootstrap_login.html.j2",
-                {"request": request, "error": "Invalid email"},
-                status_code=400,
-            )
+            return _login_page(request, settings, bootstrap=True, error="Invalid email", status_code=400)
         if len(password) < _MIN_BOOTSTRAP_PASSWORD_LEN:
-            return _templates(settings).TemplateResponse(
+            return _login_page(
                 request,
-                "cms/bootstrap_login.html.j2",
-                {
-                    "request": request,
-                    "error": f"Password must be at least {_MIN_BOOTSTRAP_PASSWORD_LEN} characters",
-                },
+                settings,
+                bootstrap=True,
+                error=f"Password must be at least {_MIN_BOOTSTRAP_PASSWORD_LEN} characters",
                 status_code=400,
             )
         async with get_connection(settings) as db:
@@ -148,19 +146,15 @@ async def login_post(
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
     if not is_valid_email(email):
-        return _templates(settings).TemplateResponse(
-            request,
-            "cms/login.html.j2",
-            {"request": request, "error": "Invalid email"},
-            status_code=400,
-        )
+        return _login_page(request, settings, bootstrap=False, error="Invalid email", status_code=400)
     if await _verify_login(settings, email, password):
         request.session["user_email"] = email
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
-    return _templates(settings).TemplateResponse(
+    return _login_page(
         request,
-        "cms/login.html.j2",
-        {"request": request, "error": "Invalid email or password"},
+        settings,
+        bootstrap=False,
+        error="Invalid email or password",
         status_code=401,
     )
 
@@ -173,25 +167,23 @@ async def logout(request: Request) -> RedirectResponse:
 
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def cms_root(request: Request) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
+async def cms_root(_user: CmsUser) -> RedirectResponse:
     return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
 
 @router.get("/articles", response_class=HTMLResponse)
-async def articles_list(request: Request, settings: Settings = Depends(get_settings)) -> Any:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
+async def articles_list(
+    request: Request,
+    _user: CmsUser,
+    settings: Settings = Depends(get_settings),
+) -> Any:
     async with get_connection(settings) as db:
         raw = await repo.list_articles(db)
     articles: list[dict[str, Any]] = []
-    for r in raw:
-        d = dict(r)
-        d["path_q"] = quote(d["path"], safe="")
-        articles.append(d)
+    for row in raw:
+        article = dict(row)
+        article["path_q"] = quote(article["path"], safe="")
+        articles.append(article)
     return _templates(settings).TemplateResponse(
         request,
         "cms/articles.html.j2",
@@ -201,16 +193,13 @@ async def articles_list(request: Request, settings: Settings = Depends(get_setti
 
 @router.post("/articles/create")
 async def articles_create(
-    request: Request,
+    _user: CmsUser,
     path: Annotated[str, Form()],
     title: Annotated[str, Form()],
     og_title: Annotated[str | None, Form()] = None,
     og_description: Annotated[str | None, Form()] = None,
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     p = normalize_article_path(path)
     if not is_valid_article_path(p):
         raise HTTPException(400, "Недопустимый или зарезервированный путь")
@@ -234,34 +223,25 @@ async def articles_create(
 
 @router.post("/articles/delete")
 async def articles_delete(
-    request: Request,
+    _user: CmsUser,
     path: Annotated[str, Form()],
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     p = normalize_article_path(path)
     async with get_connection(settings) as db:
         await repo.delete_article(db, p)
         await db.commit()
-    await publish.delete_article_storage(settings, p)
-    if p in ("/menu", "/footer"):
-        await publish.regenerate_all_visible_indexes(settings)
-    await publish.write_sitemap(settings)
+    await publish.publish_article_removed(settings, p)
     return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
 
 
 @router.post("/articles/visibility")
 async def articles_visibility(
-    request: Request,
+    _user: CmsUser,
     path: Annotated[str, Form()],
     is_visible: Annotated[str, Form()],
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     p = normalize_article_path(path)
     vis = is_visible in ("1", "true", "on", "yes")
     async with get_connection(settings) as db:
@@ -273,16 +253,13 @@ async def articles_visibility(
 
 @router.post("/articles/og")
 async def articles_og(
-    request: Request,
+    _user: CmsUser,
     path: Annotated[str, Form()],
     og_title: Annotated[str | None, Form()] = None,
     og_description: Annotated[str | None, Form()] = None,
     og_image: UploadFile | None = File(None),
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     p = normalize_article_path(path)
     async with get_connection(settings) as db:
         row = await repo.article_by_path(db, p)
@@ -301,14 +278,13 @@ async def articles_og(
             name = f"og_{secrets.token_hex(4)}{suf}"
             (d / name).write_bytes(body)
             rel_img = name
-        await repo.update_article_meta(
+        row = await repo.update_article_meta(
             db,
             p,
             og_title=(og_title or "").strip() or None,
             og_description=(og_description or "").strip() or None,
             og_image_relpath=rel_img,
         )
-        row = await repo.article_by_path(db, p)
         await publish.publish_article_change(settings, row, db=db)
         await db.commit()
     return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
@@ -317,12 +293,10 @@ async def articles_og(
 @router.get("/articles/open")
 async def articles_open_editor(
     request: Request,
+    user_email: CmsUser,
     path: str = Query(..., description="Логический путь статьи, например /index"),
     settings: Settings = Depends(get_settings),
 ) -> Any:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     config_error = _editor_config_error(settings)
     if config_error:
         return _editor_error_response(
@@ -343,7 +317,7 @@ async def articles_open_editor(
         url = await client.get_editor_url(
             row["material_id"],
             vms_json=vms,
-            metadata={"user_email": str(auth)},
+            metadata={"user_email": user_email},
         )
     except VerstkaApiError as exc:
         message = exc.message
@@ -381,10 +355,11 @@ async def articles_open_editor(
 
 
 @router.get("/users", response_class=HTMLResponse)
-async def users_list(request: Request, settings: Settings = Depends(get_settings)) -> Any:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
+async def users_list(
+    request: Request,
+    _user: CmsUser,
+    settings: Settings = Depends(get_settings),
+) -> Any:
     async with get_connection(settings) as db:
         users = await repo.list_cms_users(db)
     return _templates(settings).TemplateResponse(
@@ -396,14 +371,11 @@ async def users_list(request: Request, settings: Settings = Depends(get_settings
 
 @router.post("/users/create")
 async def users_create(
-    request: Request,
+    _user: CmsUser,
     user_email: Annotated[str, Form()],
     password: Annotated[str, Form()],
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     email = user_email.strip()
     if not is_valid_email(email) or not password:
         raise HTTPException(400)
@@ -417,14 +389,11 @@ async def users_create(
 
 @router.post("/users/delete")
 async def users_delete(
-    request: Request,
+    session_user: CmsUser,
     user_email: Annotated[str, Form()],
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
-    if user_email == auth:
+    if user_email == session_user:
         raise HTTPException(400, "Нельзя удалить самого себя")
     async with get_connection(settings) as db:
         await repo.delete_cms_user(db, user_email)
@@ -434,14 +403,11 @@ async def users_delete(
 
 @router.post("/users/password")
 async def users_password(
-    request: Request,
+    _user: CmsUser,
     user_email: Annotated[str, Form()],
     password: Annotated[str, Form()],
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    auth = _auth_or_redirect(request)
-    if isinstance(auth, RedirectResponse):
-        return auth
     async with get_connection(settings) as db:
         if not await repo.get_cms_user(db, user_email):
             raise HTTPException(404)

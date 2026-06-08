@@ -80,6 +80,28 @@ async def publish_article_change(
     await write_sitemap(settings)
 
 
+async def publish_article_removed(settings: Settings, article_path: str) -> None:
+    await delete_article_storage(settings, article_path)
+    if article_path in ("/menu", "/footer"):
+        await regenerate_all_visible_indexes(settings)
+    await write_sitemap(settings)
+
+
+async def sync_visibility_to_disk(settings: Settings, path: str, is_visible: bool) -> None:
+    if path in ("/menu", "/footer"):
+        await regenerate_all_visible_indexes(settings)
+        await write_sitemap(settings)
+        return
+    async with get_connection(settings) as db:
+        row = await repo.article_by_path(db, path)
+        if not row:
+            return
+        row = dict(row)
+        row["is_visible"] = is_visible
+        await publish_article_change(settings, row, db=db, remove_if_hidden=True)
+        await db.commit()
+
+
 async def write_article_index(settings: Settings, article: dict[str, Any], db: aiosqlite.Connection) -> None:
     menu_html, footer_html = await _menu_footer_blocks(db)
     fonts_ok = render.fonts_css_file_exists(settings)
@@ -104,7 +126,7 @@ async def remove_article_index(settings: Settings, article_path: str) -> None:
 
 async def write_sitemap(settings: Settings) -> None:
     async with get_connection(settings) as db:
-        paths = await repo.list_visible_article_paths_for_sitemap(db)
+        paths = await repo.list_visible_articles(db, paths_only=True)
     base = settings.public_base_url.rstrip("/")
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -122,31 +144,14 @@ async def write_sitemap(settings: Settings) -> None:
 
 async def regenerate_all_visible_indexes(settings: Settings) -> None:
     async with get_connection(settings) as db:
-        articles = await repo.list_visible_articles_for_regen(db)
+        articles = await repo.list_visible_articles(db)
         for a in articles:
             await write_article_index(settings, a, db)
-        # menu/footer as standalone pages if visible
         for special in ("/menu", "/footer"):
             row = await repo.article_by_path(db, special)
             if row and row.get("is_visible"):
                 await write_article_index(settings, row, db)
         await db.commit()
-
-
-async def sync_visibility_to_disk(settings: Settings, path: str, is_visible: bool) -> None:
-    if path in ("/menu", "/footer"):
-        await regenerate_all_visible_indexes(settings)
-    else:
-        async with get_connection(settings) as db:
-            row = await repo.article_by_path(db, path)
-            if not row:
-                return
-            if is_visible:
-                await write_article_index(settings, row, db)
-            else:
-                await remove_article_index(settings, path)
-            await db.commit()
-    await write_sitemap(settings)
 
 
 async def delete_article_storage(settings: Settings, article_path: str) -> None:
