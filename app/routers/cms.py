@@ -18,6 +18,7 @@ from verstka_sdk import VerstkaApiError, VerstkaError
 
 from app.config import Settings, get_settings
 from app.database import get_connection
+from app import login_guard
 from app.paths import is_valid_article_path, normalize_article_path, storage_article_dir
 from app import repo
 from app.services import publish
@@ -147,9 +148,20 @@ async def login_post(
 
     if not is_valid_email(email):
         return _login_page(request, settings, bootstrap=False, error="Invalid email", status_code=400)
+
+    if login_guard.is_user_login_blocked(settings, email):
+        return _login_page(
+            request,
+            settings,
+            bootstrap=False,
+            error="Too many failed attempts. Try again later.",
+            status_code=429,
+        )
     if await _verify_login(settings, email, password):
+        login_guard.clear_user_login_failures(email)
         request.session["user_email"] = email
         return RedirectResponse("/cms/articles", status_code=HTTP_303_SEE_OTHER)
+    login_guard.record_user_login_failure(settings, email)
     return _login_page(
         request,
         settings,

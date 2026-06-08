@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # When true, logs each HTTP request/response (headers + body preview) to stdout — dev only.
     debug: bool = Field(default=False, validation_alias="DEBUG")
 
+    cms_login_max_failures: int = Field(default=10, validation_alias="CMS_LOGIN_MAX_FAILURES")
+    cms_login_window_seconds: int = Field(default=1800, validation_alias="CMS_LOGIN_WINDOW_SECONDS")
+
     storage_dir: Path = Field(default=Path("storage"))
     templates_dir: Path = Field(default=Path(__file__).resolve().parent / "templates")
     static_dir: Path = Field(default=Path(__file__).resolve().parent / "static")
