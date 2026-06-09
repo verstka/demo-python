@@ -23,9 +23,7 @@ from app.verstka_storage import CmsVerstkaStorage
 
 T = TypeVar("T")
 
-DEFAULT_VIEWER_SCRIPT_URL = (
-    "https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js"
-)
+DEFAULT_VIEWER_SCRIPT_URL = "https://go.r2.verstka.org/viewer-latest.js"
 
 
 def run_async(coro: Coroutine[Any, Any, T]) -> T:

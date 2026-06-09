@@ -59,7 +59,6 @@ def render_article_page(
         viewer_bootstrap_enabled=viewer_bootstrap_enabled,
         viewer_script_url=settings.verstka_viewer_script_url,
         viewer_script_url_json=json.dumps(settings.verstka_viewer_script_url),
-        viewer_options_json=json.dumps({"dev": True} if settings.verstka_viewer_dev else {}),
     )
 
 

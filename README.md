@@ -10,6 +10,8 @@ A minimal **FastAPI** + **SQLite** + **verstka-sdk** app: CMS at `/cms`, Verstka
 ## Setup
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+
 cd demo-python
 uv venv -p 3.11 .venv
 source .venv/bin/activate

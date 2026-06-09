@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -23,7 +24,6 @@ class ArticleRenderingTests(unittest.TestCase):
         self.settings = make_test_settings(
             Path(self.tmp.name),
             VERSTKA_VIEWER_SCRIPT_URL=DEFAULT_VIEWER_SCRIPT_URL,
-            VERSTKA_VIEWER_DEV="1",
         )
 
     def tearDown(self) -> None:
@@ -46,11 +46,8 @@ class ArticleRenderingTests(unittest.TestCase):
         )
 
         self.assertIn(CURRENT_ARTICLE_HTML, html)
-        self.assertIn(
-            f'type="module" src="{DEFAULT_VIEWER_SCRIPT_URL}"',
-            html,
-        )
-        self.assertIn('"dev": true', html)
+        self.assertIn(json.dumps(DEFAULT_VIEWER_SCRIPT_URL), html)
+        self.assertIn("Verstka.initArticles(document)", html)
         self.assertNotIn("go.verstka.org/api.js", html)
         self.assertNotIn('class="verstka-article"', html)
 
@@ -72,7 +69,7 @@ class ArticleRenderingTests(unittest.TestCase):
 
         self.assertIn('class="verstka-legacy-article"', html)
         self.assertIn("<p>Legacy body</p>", html)
-        self.assertNotIn("initArticles", html)
+        self.assertNotIn("Verstka.initArticles", html)
 
 
 if __name__ == "__main__":

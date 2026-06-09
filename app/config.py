@@ -21,14 +21,13 @@ class Settings(BaseSettings):
     verstka_api_secret: str = Field(default="", validation_alias="VERSTKA_API_SECRET")
     verstka_callback_url: str = Field(default="", validation_alias="VERSTKA_CALLBACK_URL")
     verstka_api_url: str = Field(
-        default="https://api-stage.verstka.org/integration",
+        default="https://api.r2.verstka.org/integration",
         validation_alias="VERSTKA_API_URL",
     )
     verstka_viewer_script_url: str = Field(
-        default="https://cdn.jsdelivr.net/npm/verstka-viewer@latest/dist/index.js",
+        default="https://go.r2.verstka.org/viewer-latest.js",
         validation_alias="VERSTKA_VIEWER_SCRIPT_URL",
     )
-    verstka_viewer_dev: bool = Field(default=True, validation_alias="VERSTKA_VIEWER_DEV")
 
     public_base_url: str = Field(default="http://127.0.0.1:8000", validation_alias="PUBLIC_BASE_URL")
     session_secret: str = Field(default="dev-secret-change-me", validation_alias="SESSION_SECRET")
@@ -63,7 +62,7 @@ class Settings(BaseSettings):
             return v.strip()
         return v
 
-    @field_validator("debug", "verstka_viewer_dev", mode="before")
+    @field_validator("debug", mode="before")
     @classmethod
     def _coerce_bool(cls, v: Any) -> bool:
         if isinstance(v, bool):

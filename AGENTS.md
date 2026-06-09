@@ -81,6 +81,8 @@ Preserve this flow when making changes.
 Set up locally:
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+
 uv venv -p 3.11 .venv
 source .venv/bin/activate
 uv pip install -e .
