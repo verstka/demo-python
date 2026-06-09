@@ -10,7 +10,7 @@ from urllib.parse import quote
 import httpx
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER
@@ -31,6 +31,16 @@ _ALLOWED_OG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 _MIN_BOOTSTRAP_PASSWORD_LEN = 8
 
 
+class CmsLoginRequired(Exception):
+    """Raised when a CMS route is accessed without an authenticated session."""
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(CmsLoginRequired)
+    async def _redirect_to_cms_login(request: Request, exc: CmsLoginRequired) -> RedirectResponse:
+        return RedirectResponse("/cms/login", status_code=HTTP_303_SEE_OTHER)
+
+
 def _templates(settings: Settings) -> Jinja2Templates:
     return Jinja2Templates(directory=str(settings.templates_dir))
 
@@ -38,7 +48,7 @@ def _templates(settings: Settings) -> Jinja2Templates:
 def require_cms_user(request: Request) -> str:
     user_email = request.session.get("user_email")
     if not user_email:
-        return RedirectResponse("/cms/login", status_code=HTTP_303_SEE_OTHER)
+        raise CmsLoginRequired()
     return str(user_email)
 
 

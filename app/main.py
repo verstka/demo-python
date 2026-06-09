@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
     if settings.debug:
         app.add_middleware(DebugRequestLoggingMiddleware)
     install_exception_handlers(app)
+    cms_router.register_exception_handlers(app)
     app.include_router(cms_router.router)
     return app
 

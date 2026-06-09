@@ -53,6 +53,7 @@ def build_cms_test_app(
 ) -> TestClient:
     app = FastAPI()
     app.add_middleware(SessionMiddleware, secret_key="test-secret")
+    cms.register_exception_handlers(app)
     app.include_router(cms.router)
     if verstka_client is not None:
         app.state.verstka_client = verstka_client
