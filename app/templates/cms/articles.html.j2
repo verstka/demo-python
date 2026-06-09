@@ -15,7 +15,7 @@
       display: inline-block;
       padding: 0.35rem 0.75rem;
       border: 1px solid #ccc;
-      border-radius: 9999px;
+      border-radius: 0.25rem;
       background: #f5f5f5;
       color: inherit;
       font: inherit;
@@ -36,6 +36,51 @@
     td form button:active,
     fieldset form button:active {
       background: #ddd;
+    }
+    .field {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .field:last-of-type {
+      margin-bottom: 0.65rem;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .field input[type="text"],
+    .field input:not([type="hidden"]):not([type="file"]):not([type="submit"]),
+    fieldset input[type="text"],
+    fieldset input:not([type="hidden"]):not([type="file"]):not([type="submit"]) {
+      display: block;
+      width: 100%;
+      max-width: 24rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+      background: #fff;
+      font: inherit;
+      line-height: 1.3;
+      box-sizing: border-box;
+    }
+    .field input:focus,
+    fieldset input:focus {
+      outline: none;
+      border-color: #888;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+    }
+    .og-form {
+      margin-top: 0.5rem;
+    }
+    .og-form .field-wide input {
+      max-width: 28rem;
+    }
+    fieldset form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
     }
   </style>
 {% endblock %}
@@ -69,11 +114,20 @@
               <button type="submit">Delete</button>
             </form>
           </div>
-          <form method="post" action="/cms/articles/og" enctype="multipart/form-data" style="margin-top:0.5rem">
+          <form method="post" action="/cms/articles/og" enctype="multipart/form-data" class="og-form">
             <input type="hidden" name="path" value="{{ a.path }}">
-            <label>OG title <input name="og_title" value="{{ a.og_title or '' }}" style="width:12rem"></label>
-            <label>OG description <input name="og_description" value="{{ a.og_description or '' }}" style="width:16rem"></label>
-            <label>OG image <input type="file" name="og_image" accept=".jpg,.jpeg,.png,.webp,.gif"></label>
+            <div class="field">
+              <label>OG title</label>
+              <input type="text" name="og_title" value="{{ a.og_title or '' }}">
+            </div>
+            <div class="field field-wide">
+              <label>OG description</label>
+              <input type="text" name="og_description" value="{{ a.og_description or '' }}">
+            </div>
+            <div class="field">
+              <label>OG image</label>
+              <input type="file" name="og_image" accept=".jpg,.jpeg,.png,.webp,.gif">
+            </div>
             <button type="submit">Save OG</button>
           </form>
         </td>
@@ -84,10 +138,22 @@
   <fieldset>
     <legend>New article</legend>
     <form method="post" action="/cms/articles/create">
-      <label>Path (e.g. /blog/hello) <input name="path" required class="mono" placeholder="/index"></label><br>
-      <label>Title <input name="title" style="width:20rem"></label><br>
-      <label>OG title <input name="og_title" style="width:20rem"></label><br>
-      <label>OG description <input name="og_description" style="width:28rem"></label><br>
+      <div class="field">
+        <label>Path (e.g. /blog/hello)</label>
+        <input name="path" required class="mono" placeholder="/index">
+      </div>
+      <div class="field">
+        <label>Title</label>
+        <input type="text" name="title">
+      </div>
+      <div class="field">
+        <label>OG title</label>
+        <input type="text" name="og_title">
+      </div>
+      <div class="field field-wide">
+        <label>OG description</label>
+        <input type="text" name="og_description">
+      </div>
       <button type="submit">Create</button>
     </form>
   </fieldset>
