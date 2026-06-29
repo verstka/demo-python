@@ -241,7 +241,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30.0" },
-    { name = "verstka-sdk", extras = ["fastapi"], specifier = ">=0.1.0" },
+    { name = "verstka-sdk", extras = ["fastapi"], specifier = ">=0.1.8" },
 ]
 provides-extras = ["dev"]
 
@@ -841,15 +841,15 @@ wheels = [
 
 [[package]]
 name = "verstka-sdk"
-version = "0.1.6"
+version = "0.1.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0c/3d/98906327d6a04802724e65753af3dafb27396050f28dc7a028b4ab39180b/verstka_sdk-0.1.6.tar.gz", hash = "sha256:44f9b86ef0415c875409dffa7cc586bb92510da0be412d3132862f45a6bef614", size = 42478, upload-time = "2026-05-26T19:44:31.6Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/d7/e829d5cd60817b0a53ea4938ab0e94f14b4bb7c0e31582c09bdf2953fe20/verstka_sdk-0.1.8.tar.gz", hash = "sha256:ab63ff429730c6f660aba36c070dcb89b20ed6237fea80e7e42f1f8dae3317c6", size = 33350, upload-time = "2026-06-29T00:02:37.92Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/c1/af422f72bd8ade008003669dff63818ea9d6c093df87cb6a99ce3a26c3d4/verstka_sdk-0.1.6-py3-none-any.whl", hash = "sha256:fbea7840c80ede9f6c58f2ea05c006b7157ddf91fdbd7d519c93f74cb4ca5814", size = 38052, upload-time = "2026-05-26T19:44:30.505Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/86/6ab714177823021caea8522323efd01d0f807600a731ef544e62abb854b5/verstka_sdk-0.1.8-py3-none-any.whl", hash = "sha256:d33e399997777a36e0d2b265fd6d5426c3e94572e4dd929ae5ac44ed5d5d166b", size = 35183, upload-time = "2026-06-29T00:02:37.033Z" },
 ]
 
 [package.optional-dependencies]

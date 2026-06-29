@@ -59,8 +59,8 @@ class FontsCallbackTests(unittest.TestCase):
         }
         signature = sign_material(material_id, content_url, self.settings.verstka_api_secret)
 
-        async def fake_download_zip(url, dest_path, *, max_size, timeout, headers=None):
-            del url, max_size, timeout, headers
+        async def fake_download_zip(url, dest_path, *, max_size, timeout, headers=None, **kwargs):
+            del url, max_size, timeout, headers, kwargs
             shutil.copy2(self.zip_path, dest_path)
 
         with patch("verstka_sdk.callbacks.download_zip_async", fake_download_zip):
