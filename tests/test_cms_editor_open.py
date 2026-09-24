@@ -62,6 +62,9 @@ class EditorOpenTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertIn("Could not reach Verstka API", response.text)
         self.assertIn("https://api-stage.verstka.org/integration", response.text)
+        self.assertIn('data-testid="editor-error-state"', response.text)
+        self.assertIn('<details class="error-details">', response.text)
+        self.assertIn('class="button button--primary"', response.text)
 
 
 if __name__ == "__main__":

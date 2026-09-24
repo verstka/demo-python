@@ -1,33 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title }} — CMS</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; }
-    nav { margin-bottom: 1.5rem; }
-    nav a { margin-right: 1rem; }
-    .err { color: #8a1f11; background: #fff3f0; border: 1px solid #efc7bf; padding: 1rem; }
-    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; }
-    dt { font-weight: 700; }
-    dd { margin: 0; overflow-wrap: anywhere; }
-    code { font-family: ui-monospace, monospace; font-size: 0.9rem; }
-  </style>
-</head>
-<body>
-  <nav>
-    <a href="/cms/articles">Articles</a>
-    <a href="/cms/users">Users</a>
-    <a href="/cms/logout">Sign out</a>
-  </nav>
-  <h1>{{ title }}</h1>
-  <p class="err">{{ message }}</p>
-  <dl>
-    <dt>API URL</dt>
-    <dd><code>{{ api_url }}</code></dd>
-    <dt>Callback URL</dt>
-    <dd><code>{{ callback_url }}</code></dd>
-  </dl>
-</body>
-</html>
+{% set active_page = "articles" %}
+{% set page_title = "Editor error" %}
+{% extends "cms/base.html.j2" %}
+{% block title %}{{ title }} — Verstka CMS{% endblock %}
+{% block content %}
+  <section class="error-page" data-testid="editor-error-state">
+    <div class="error-state">
+      <span class="error-state__icon" aria-hidden="true">
+        <svg class="icon"><use href="#icon-alert"></use></svg>
+      </span>
+      <p class="error-state__eyebrow">Editor connection</p>
+      <h1>{{ title }}</h1>
+      <p class="error-state__lead">The editor could not be opened for this request. Check the connection settings or return to your articles.</p>
+      <a class="button button--primary" href="/cms/articles">Back to articles</a>
+
+      <details class="error-details">
+        <summary>Show technical details</summary>
+        <div class="error-details__body">
+          <p class="error-details__message">{{ message }}</p>
+          <dl class="error-meta">
+            <dt>API URL</dt>
+            <dd><code>{{ api_url }}</code></dd>
+            <dt>Callback URL</dt>
+            <dd><code>{{ callback_url or "Not configured" }}</code></dd>
+          </dl>
+        </div>
+      </details>
+    </div>
+  </section>
+{% endblock %}

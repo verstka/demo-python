@@ -1,167 +1,192 @@
+{% set active_page = "articles" %}
+{% set page_title = "Articles" %}
 {% extends "cms/base.html.j2" %}
-{% block title %}Articles — CMS{% endblock %}
-{% block extra_head %}
-  <style>
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
-    th { background: #f5f5f5; }
-    .mono { font-family: ui-monospace, monospace; font-size: 0.9rem; }
-    td.mono a {
-      color: #06c;
-      text-decoration: underline;
-    }
-    td.mono a:hover {
-      color: #039;
-    }
-    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-    nav a,
-    .row a,
-    .row button,
-    td form button,
-    fieldset form button {
-      display: inline-block;
-      padding: 0.25rem 0.55rem;
-      border: 1px solid #ccc;
-      border-radius: 0.25rem;
-      background: #f5f5f5;
-      color: inherit;
-      font: inherit;
-      line-height: 1.2;
-      text-decoration: none;
-      cursor: pointer;
-      appearance: none;
-      margin: 0;
-    }
-    nav a:hover,
-    .row a:hover,
-    .row button:hover,
-    td form button:hover,
-    fieldset form button:hover {
-      background: #e8e8e8;
-    }
-    .row button:active,
-    td form button:active,
-    fieldset form button:active {
-      background: #ddd;
-    }
-    .field {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-    .field:last-of-type {
-      margin-bottom: 0.65rem;
-    }
-    .field label {
-      display: block;
-      margin-bottom: 0.25rem;
-      font-size: 0.85rem;
-      color: #555;
-    }
-    .field input[type="text"],
-    .field input:not([type="hidden"]):not([type="file"]):not([type="submit"]),
-    fieldset input[type="text"],
-    fieldset input:not([type="hidden"]):not([type="file"]):not([type="submit"]) {
-      display: block;
-      width: 100%;
-      max-width: 24rem;
-      padding: 0.4rem 0.6rem;
-      border: 1px solid #ccc;
-      border-radius: 0.25rem;
-      background: #fff;
-      font: inherit;
-      line-height: 1.3;
-      box-sizing: border-box;
-    }
-    .field input:focus,
-    fieldset input:focus {
-      outline: none;
-      border-color: #888;
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
-    }
-    .og-form {
-      margin-top: 0.5rem;
-    }
-    .og-form .field-wide input {
-      max-width: 28rem;
-    }
-    fieldset form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-    }
-  </style>
-{% endblock %}
 {% block content %}
-  <h1>Articles</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Path</th>
-        <th>Title</th>
-        <th>Visible</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in articles %}
-      <tr>
-        <td class="mono"><a href="{{ a.path }}/">{{ a.path }}</a></td>
-        <td>{{ a.title }}</td>
-        <td>{% if a.is_visible %}yes{% else %}no{% endif %}</td>
-        <td>
-          <div class="row">
-            <a href="/cms/articles/open?path={{ a.path_q }}" target="_blank" rel="noopener noreferrer">Verstka editor</a>
-            <form method="post" action="/cms/articles/visibility" style="display:inline">
-              <input type="hidden" name="path" value="{{ a.path }}">
-              <input type="hidden" name="is_visible" value="{{ 0 if a.is_visible else 1 }}">
-              <button type="submit">{% if a.is_visible %}Hide{% else %}Show{% endif %}</button>
-            </form>
-            <form method="post" action="/cms/articles/delete" style="display:inline" onsubmit="return confirm('Delete this article?');">
-              <input type="hidden" name="path" value="{{ a.path }}">
-              <button type="submit">Delete</button>
-            </form>
-          </div>
-          <form method="post" action="/cms/articles/og" enctype="multipart/form-data" class="og-form">
-            <input type="hidden" name="path" value="{{ a.path }}">
-            <div class="field">
-              <label>OG title</label>
-              <input type="text" name="og_title" value="{{ a.og_title or '' }}">
-            </div>
-            <div class="field field-wide">
-              <label>OG description</label>
-              <input type="text" name="og_description" value="{{ a.og_description or '' }}">
-            </div>
-            <div class="field">
-              <label>OG image</label>
-              <input type="file" name="og_image" accept=".jpg,.jpeg,.png,.webp,.gif">
-            </div>
-            <button type="submit">Save OG</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <fieldset>
-    <legend>New article</legend>
+  {% set published_count = articles|selectattr("is_visible")|list|length %}
+  <section>
+    <header class="page-header">
+      <div>
+        <h1>Articles</h1>
+        <p>Create and publish articles, manage metadata, and open them in the Verstka editor.</p>
+      </div>
+      <button class="button button--primary" type="button" data-dialog-open="article-create-dialog">
+        <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
+        Add
+      </button>
+    </header>
+
+    <div class="stats" aria-label="Article statistics">
+      <article class="stat-card">
+        <span class="stat-card__label"><span class="stat-card__mark"></span>Total</span>
+        <strong class="stat-card__value" data-stat="total">{{ articles|length }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label"><span class="stat-card__mark stat-card__mark--success"></span>Published</span>
+        <strong class="stat-card__value" data-stat="published">{{ published_count }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label"><span class="stat-card__mark stat-card__mark--muted"></span>Hidden</span>
+        <strong class="stat-card__value" data-stat="hidden">{{ articles|length - published_count }}</strong>
+      </article>
+    </div>
+
+    <div class="panel">
+      <header class="panel__header">
+        <h2 class="panel__title">All articles</h2>
+        <span class="panel__caption">{{ articles|length }} {% if articles|length == 1 %}article{% else %}articles{% endif %}</span>
+      </header>
+      {% if articles %}
+      <div class="table-scroll">
+        <table aria-label="Article list">
+          <colgroup>
+            <col style="width:27%">
+            <col style="width:18%">
+            <col style="width:13%">
+            <col class="hide-tablet" style="width:16%">
+            <col style="width:26%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Article</th>
+              <th>Path</th>
+              <th>Status</th>
+              <th class="hide-tablet">Updated</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in articles %}
+            <tr>
+              <td>
+                <div class="article-cell">
+                  <span class="article-thumb">{{ a.title[:2]|upper }}</span>
+                  <span class="article-copy">
+                    <strong>{{ a.title }}</strong>
+                    <span>{% if a.og_title %}OG configured{% else %}No OG title{% endif %}</span>
+                  </span>
+                </div>
+              </td>
+              <td><a class="path" href="{{ a.path }}/" target="_blank" rel="noopener noreferrer">{{ a.path }}</a></td>
+              <td>
+                <span class="status{% if a.is_visible %} status--visible{% endif %}">{% if a.is_visible %}Published{% else %}Hidden{% endif %}</span>
+              </td>
+              <td class="hide-tablet"><span class="muted">{{ a.updated_at[:16] if a.updated_at else "—" }}</span></td>
+              <td>
+                <div class="actions">
+                  <details class="action-menu">
+                    <summary class="action-button" aria-label="More actions for {{ a.title }}">
+                      <svg class="icon" aria-hidden="true"><use href="#icon-more"></use></svg>
+                    </summary>
+                    <div class="menu-popover">
+                      <a class="menu-item" href="/cms/articles/open?path={{ a.path_q }}" target="_blank" rel="noopener noreferrer">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-external"></use></svg>
+                        Open editor
+                      </a>
+                      <button class="menu-item" type="button" data-dialog-open="article-og-dialog-{{ loop.index }}">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg>
+                        OG settings
+                      </button>
+                      <form method="post" action="/cms/articles/visibility">
+                        <input type="hidden" name="path" value="{{ a.path }}">
+                        <input type="hidden" name="is_visible" value="{{ 0 if a.is_visible else 1 }}">
+                        <button class="menu-item" type="submit">
+                          <svg class="icon" aria-hidden="true"><use href="{% if a.is_visible %}#icon-eye-off{% else %}#icon-eye{% endif %}"></use></svg>
+                          {% if a.is_visible %}Hide article{% else %}Publish article{% endif %}
+                        </button>
+                      </form>
+                      <form method="post" action="/cms/articles/delete" onsubmit="return confirm('Delete this article?')">
+                        <input type="hidden" name="path" value="{{ a.path }}">
+                        <button class="menu-item menu-item--danger" type="submit">
+                          <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span><strong>No articles yet</strong>Create your first article to open it in the editor.</span>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <dialog id="article-create-dialog">
+    <header class="dialog__header">
+      <span class="dialog__heading"><h2>New article</h2><span>Create a new entry</span></span>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
     <form method="post" action="/cms/articles/create">
-      <div class="field">
-        <label>Path (e.g. /blog/hello)</label>
-        <input name="path" required class="mono" placeholder="/index">
+      <div class="dialog__body">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Path</span>
+            <input class="input" name="path" placeholder="/blog/new-article" required>
+            <span class="field__hint">Start with /, for example /index or /journal/story.</span>
+          </label>
+          <label class="field">
+            <span class="field__label">Title</span>
+            <input class="input" name="title" placeholder="Article title" required>
+          </label>
+          <div class="form-row">
+            <label class="field">
+              <span class="field__label">OG title</span>
+              <input class="input" name="og_title" placeholder="Social card title">
+            </label>
+            <label class="field">
+              <span class="field__label">OG description</span>
+              <input class="input" name="og_description" placeholder="Short description">
+            </label>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <label>Title</label>
-        <input type="text" name="title">
-      </div>
-      <div class="field">
-        <label>OG title</label>
-        <input type="text" name="og_title">
-      </div>
-      <div class="field field-wide">
-        <label>OG description</label>
-        <input type="text" name="og_description">
-      </div>
-      <button type="submit">Create</button>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
+        <button class="button button--primary" type="submit">Create article</button>
+      </footer>
     </form>
-  </fieldset>
+  </dialog>
+
+  {% for a in articles %}
+  <dialog id="article-og-dialog-{{ loop.index }}">
+    <header class="dialog__header">
+      <span class="dialog__heading"><h2>OG settings</h2><span>{{ a.path }}</span></span>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
+    <form method="post" action="/cms/articles/og" enctype="multipart/form-data">
+      <input type="hidden" name="path" value="{{ a.path }}">
+      <div class="dialog__body">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">OG title</span>
+            <input class="input" name="og_title" value="{{ a.og_title or '' }}" placeholder="Social card title">
+          </label>
+          <label class="field">
+            <span class="field__label">OG description</span>
+            <textarea class="textarea" name="og_description" placeholder="Social card description">{{ a.og_description or '' }}</textarea>
+          </label>
+          <label class="field">
+            <span class="field__label">OG image</span>
+            <input class="file-input" type="file" name="og_image" accept=".jpg,.jpeg,.png,.webp,.gif">
+          </label>
+        </div>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
+        <button class="button button--primary" type="submit">Save</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endfor %}
 {% endblock %}

@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from verstka_sdk import AsyncVerstkaClient, VerstkaConfig
 from verstka_sdk.integrations.fastapi import build_callback_router, install_exception_handlers
@@ -62,6 +63,7 @@ def create_app() -> FastAPI:
         app.add_middleware(DebugRequestLoggingMiddleware)
     install_exception_handlers(app)
     cms_router.register_exception_handlers(app)
+    app.mount("/cms/static", StaticFiles(directory=settings.static_dir), name="cms-static")
     app.include_router(cms_router.router)
     return app
 
