@@ -1,25 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}CMS{% endblock %}</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 1rem 2rem; max-width: 56rem; }
-    nav { margin-bottom: 1.5rem; }
-    nav a { margin-right: 1rem; }
-    fieldset { margin-top: 1.5rem; }
-  </style>
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}{{ page_title }} — Verstka CMS{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/cms/static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/cms/static/cms.css">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  {% block nav %}
-  <nav>
-    <a href="/cms/articles">Articles</a>
-    <a href="/cms/users">Users</a>
-    <a href="/cms/logout">Sign out</a>
-  </nav>
-  {% endblock %}
-  {% block content %}{% endblock %}
+  <svg aria-hidden="true" style="display:none">
+    <symbol id="icon-file-text" viewBox="0 0 24 24">
+      <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8l6 6v12a2 2 0 0 1-2 2z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.74"/>
+    </symbol>
+    <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></symbol>
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A10.4 10.4 0 0 1 12 4c6.5 0 10 8 10 8a18 18 0 0 1-2.1 3.1M6.6 6.6C3.5 8.5 2 12 2 12s3.5 8 10 8a9.8 9.8 0 0 0 3.4-.6"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="icon-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M19 8v6M16 11h6"/></symbol>
+    <symbol id="icon-key" viewBox="0 0 24 24"><circle cx="15.5" cy="8.5" r="5.5"/><path d="m11.5 12.5-8 8V22H5l1-1h2v-2h2v-2l1.5-1.5"/></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none"/></symbol>
+  </svg>
+
+  <div class="app-shell" data-testid="cms-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/cms/articles" data-testid="brand">
+        <span>Verstka</span>
+        <span class="brand__badge">CMS</span>
+      </a>
+
+      <nav class="sidebar__nav" aria-label="Main navigation">
+        <a class="nav-button" href="/cms/articles" {% if active_page == 'articles' %}aria-current="page"{% endif %}>
+          <svg class="icon" aria-hidden="true"><use href="#icon-file-text"></use></svg>
+          <span>Articles</span>
+        </a>
+        <a class="nav-button" href="/cms/users" {% if active_page == 'users' %}aria-current="page"{% endif %}>
+          <svg class="icon" aria-hidden="true"><use href="#icon-users"></use></svg>
+          <span>Administrators</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        {% set current_email = request.session.get('user_email', 'Administrator') %}
+        <span class="avatar">{{ current_email[:2]|upper }}</span>
+        <span class="profile-copy">
+          <strong>{{ current_email.split('@')[0] }}</strong>
+          <span>{{ current_email }}</span>
+        </span>
+        <a class="icon-button" href="/cms/logout" title="Sign out" aria-label="Sign out" data-testid="logout-button">
+          <svg class="icon" aria-hidden="true"><use href="#icon-logout"></use></svg>
+        </a>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="breadcrumbs" aria-label="Breadcrumbs">
+          <span>CMS</span>
+          <svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg>
+          <span class="breadcrumbs__current">{{ page_title }}</span>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="content__inner">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/cms/static/cms.js" defer></script>
 </body>
 </html>

@@ -1,61 +1,118 @@
+{% set active_page = "users" %}
+{% set page_title = "Administrators" %}
 {% extends "cms/base.html.j2" %}
-{% block title %}Users — CMS{% endblock %}
-{% block extra_head %}
-  <style>
-    body { max-width: 40rem; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 0.5rem 0; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-    nav a,
-    li form button,
-    fieldset form button {
-      display: inline-block;
-      padding: 0.25rem 0.55rem;
-      border: 1px solid #ccc;
-      border-radius: 0.25rem;
-      background: #f5f5f5;
-      color: inherit;
-      font: inherit;
-      line-height: 1.2;
-      text-decoration: none;
-      cursor: pointer;
-      appearance: none;
-      margin: 0;
-    }
-    nav a:hover,
-    li form button:hover,
-    fieldset form button:hover {
-      background: #e8e8e8;
-    }
-    li form button:active,
-    fieldset form button:active {
-      background: #ddd;
-    }
-  </style>
-{% endblock %}
 {% block content %}
-  <h1>Administrators</h1>
-  <ul>
-    {% for u in users %}
-    <li>
-      <strong>{{ u.user_email }}</strong>
-      <form method="post" action="/cms/users/delete" style="display:inline" onsubmit="return confirm('Delete this user?');">
-        <input type="hidden" name="user_email" value="{{ u.user_email }}">
-        <button type="submit">Delete</button>
-      </form>
-      <form method="post" action="/cms/users/password" style="display:inline">
-        <input type="hidden" name="user_email" value="{{ u.user_email }}">
-        <input type="password" name="password" placeholder="New password" required>
-        <button type="submit">Change password</button>
-      </form>
-    </li>
-    {% endfor %}
-  </ul>
-  <fieldset>
-    <legend>Add user</legend>
+  <section>
+    <header class="page-header">
+      <div>
+        <h1>Administrators</h1>
+        <p>Manage team access to the CMS and article editor.</p>
+      </div>
+      <button class="button button--primary" type="button" data-dialog-open="user-create-dialog">
+        <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
+        Add
+      </button>
+    </header>
+
+    <div class="panel">
+      <header class="panel__header">
+        <h2 class="panel__title">Team</h2>
+        <span class="panel__caption">{{ users|length }} {% if users|length == 1 %}user{% else %}users{% endif %}</span>
+      </header>
+      <div class="table-scroll">
+        <table aria-label="Administrator list">
+          <colgroup><col style="width:75%"><col style="width:25%"></colgroup>
+          <thead><tr><th>User</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <span class="user-avatar">{{ u.user_email[:2]|upper }}</span>
+                  <span class="user-copy">
+                    <strong>{{ u.user_email }}</strong>
+                    <span>{% if u.user_email == request.session.get('user_email') %}You{% else %}CMS access{% endif %}</span>
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="actions">
+                  <details class="action-menu">
+                    <summary class="action-button" aria-label="More actions for {{ u.user_email }}">
+                      <svg class="icon" aria-hidden="true"><use href="#icon-more"></use></svg>
+                    </summary>
+                    <div class="menu-popover">
+                      <button class="menu-item" type="button" data-dialog-open="password-dialog-{{ loop.index }}">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-key"></use></svg>
+                        Change password
+                      </button>
+                      <form method="post" action="/cms/users/delete" onsubmit="return confirm('Delete this administrator?')">
+                        <input type="hidden" name="user_email" value="{{ u.user_email }}">
+                        <button class="menu-item menu-item--danger" type="submit" {% if u.user_email == request.session.get('user_email') %}disabled title="You cannot delete your own account"{% endif %}>
+                          <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+                          Remove administrator
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="dialog--small" id="user-create-dialog">
+    <header class="dialog__header">
+      <span class="dialog__heading"><h2>Add administrator</h2><span>Grant CMS access</span></span>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
     <form method="post" action="/cms/users/create" autocomplete="off">
-      <label>Email <input name="user_email" required autocomplete="off"></label>
-      <label>Password <input name="password" type="password" required autocomplete="new-password"></label>
-      <button type="submit">Add</button>
+      <div class="dialog__body">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="user_email" type="email" placeholder="name@company.com" required autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field__label">Temporary password</span>
+            <input class="input" name="password" type="password" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password">
+          </label>
+        </div>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
+        <button class="button button--primary" type="submit">Add</button>
+      </footer>
     </form>
-  </fieldset>
+  </dialog>
+
+  {% for u in users %}
+  <dialog class="dialog--small" id="password-dialog-{{ loop.index }}">
+    <header class="dialog__header">
+      <span class="dialog__heading"><h2>Change password</h2><span>{{ u.user_email }}</span></span>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
+    <form method="post" action="/cms/users/password">
+      <input type="hidden" name="user_email" value="{{ u.user_email }}">
+      <div class="dialog__body">
+        <label class="field">
+          <span class="field__label">New password</span>
+          <input class="input" name="password" type="password" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password">
+        </label>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
+        <button class="button button--primary" type="submit">Update password</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endfor %}
 {% endblock %}
