@@ -169,6 +169,10 @@
       <div class="dialog__body">
         <div class="form-grid">
           <label class="field">
+            <span class="field__label">Title</span>
+            <input class="input" name="title" value="{{ a.title }}" placeholder="Article title" required>
+          </label>
+          <label class="field">
             <span class="field__label">OG title</span>
             <input class="input" name="og_title" value="{{ a.og_title or '' }}" placeholder="Social card title">
           </label>

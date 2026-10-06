@@ -79,10 +79,33 @@ class CmsLayoutTests(unittest.TestCase):
         self.assertIn('action="/cms/articles/create"', response.text)
         self.assertIn('action="/cms/articles/visibility"', response.text)
         self.assertIn('action="/cms/articles/og"', response.text)
+        self.assertIn('name="title" value="Hello"', response.text)
         self.assertIn('action="/cms/articles/delete"', response.text)
         self.assertIn('/cms/articles/open?path=', response.text)
         self.assertNotIn(">Statistics<", response.text)
         self.assertIn('data-testid="logout-button"', response.text)
+
+    def test_articles_og_form_updates_title(self) -> None:
+        client = self._logged_in_client()
+
+        response = client.post(
+            "/cms/articles/og",
+            data={
+                "path": "/hi",
+                "title": "Renamed Hello",
+                "og_title": "Social Hello",
+                "og_description": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/cms/articles")
+
+        listing = client.get("/cms/articles")
+        self.assertEqual(listing.status_code, 200)
+        self.assertIn("Renamed Hello", listing.text)
+        self.assertIn('name="title" value="Renamed Hello"', listing.text)
+        self.assertNotIn(">Hello<", listing.text)
 
     def test_users_page_uses_dashboard_and_preserves_user_actions(self) -> None:
         client = self._logged_in_client()

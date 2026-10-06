@@ -277,6 +277,7 @@ async def articles_visibility(
 async def articles_og(
     _user: CmsUser,
     path: Annotated[str, Form()],
+    title: Annotated[str | None, Form()] = None,
     og_title: Annotated[str | None, Form()] = None,
     og_description: Annotated[str | None, Form()] = None,
     og_image: UploadFile | None = File(None),
@@ -303,6 +304,7 @@ async def articles_og(
         row = await repo.update_article_meta(
             db,
             p,
+            title=(title or "").strip() or p,
             og_title=(og_title or "").strip() or None,
             og_description=(og_description or "").strip() or None,
             og_image_relpath=rel_img,
