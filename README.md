@@ -68,7 +68,7 @@ export DATABASE_URL=sqlite+aiosqlite:///./data.db
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Create an article with path **`/index`** for the home page (nginx redirects `/` → `/index/`).
+Create an article with path **`/index`** for the home page (nginx serves it at `/`).
 
 ## Viewer assets and article rendering
 
@@ -97,7 +97,7 @@ Example config: [`staff/nginx.conf`](staff/nginx.conf).
 
 - **`root`** points at **`storage/`**, where the app writes `index.html`, article media, and `sitemap.xml` / `favicon.ico`.
 - **`/cms`** and **`/verstka/`** are proxied to uvicorn.
-- **`/`** → **`/index/`**; articles are served with **`try_files`** and **`index.html`**.
+- **`/`** serves `storage/index/index.html`; `/index` and `/index/` redirect to `/`; other articles use **`try_files`** and **`index.html`**.
 
 ## Autostart (systemd)
 

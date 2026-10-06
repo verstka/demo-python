@@ -52,7 +52,7 @@ Preserve this flow when making changes.
 - Article paths map to static directories:
   - `/index` -> `storage/index/index.html`
   - `/blog/post` -> `storage/blog/post/index.html`
-- `/index` is the intended home page; nginx redirects `/` to `/index/`.
+- `/index` is the intended home page; nginx serves it at `/` and redirects `/index` and `/index/` to `/`.
 - `/cms` and `/fonts` are reserved path prefixes for articles.
 - `/menu` and `/footer` are special article paths. When visible and edited,
   they are injected into other rendered article pages, so publishing changes
