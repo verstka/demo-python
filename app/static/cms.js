@@ -1,7 +1,17 @@
+const dialogReturnFocus = new WeakMap()
+
 document.querySelectorAll('[data-dialog-open]').forEach((trigger) => {
   trigger.addEventListener('click', () => {
     const dialog = document.getElementById(trigger.dataset.dialogOpen)
-    if (dialog instanceof HTMLDialogElement) dialog.showModal()
+    if (!(dialog instanceof HTMLDialogElement)) return
+
+    const actionMenu = trigger.closest('.action-menu')
+    const actionMenuSummary = actionMenu?.querySelector('summary')
+    const returnTarget = actionMenuSummary instanceof HTMLElement ? actionMenuSummary : trigger
+
+    dialogReturnFocus.set(dialog, returnTarget)
+    if (actionMenu) actionMenu.removeAttribute('open')
+    dialog.showModal()
   })
 })
 
@@ -13,6 +23,12 @@ document.querySelectorAll('[data-dialog-close]').forEach((trigger) => {
 })
 
 document.querySelectorAll('dialog').forEach((dialog) => {
+  dialog.addEventListener('close', () => {
+    const returnTarget = dialogReturnFocus.get(dialog)
+    if (returnTarget instanceof HTMLElement) returnTarget.focus()
+    dialogReturnFocus.delete(dialog)
+  })
+
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close()
   })

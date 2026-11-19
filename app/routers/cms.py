@@ -13,6 +13,7 @@ from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 from starlette.status import HTTP_303_SEE_OTHER
 from verstka_sdk import VerstkaApiError, VerstkaError
 
@@ -42,7 +43,11 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 
 def _templates(settings: Settings) -> Jinja2Templates:
-    return Jinja2Templates(directory=str(settings.templates_dir))
+    environment = Environment(
+        loader=FileSystemLoader(settings.templates_dir),
+        autoescape=True,
+    )
+    return Jinja2Templates(env=environment)
 
 
 def require_cms_user(request: Request) -> str:

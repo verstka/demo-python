@@ -63,6 +63,11 @@ class EditorOpenTests(unittest.TestCase):
         self.assertIn("Could not reach Verstka API", response.text)
         self.assertIn("https://api-stage.verstka.org/integration", response.text)
         self.assertIn('data-testid="editor-error-state"', response.text)
+        self.assertIn(
+            '<a class="nav-button" href="/cms/articles" aria-label="Articles" '
+            'title="Articles" aria-current="page">',
+            response.text,
+        )
         self.assertIn('<details class="error-details">', response.text)
         self.assertIn('class="button button--primary"', response.text)
 

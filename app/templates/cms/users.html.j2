@@ -46,13 +46,15 @@
                         <svg class="icon" aria-hidden="true"><use href="#icon-key"></use></svg>
                         Change password
                       </button>
-                      <form method="post" action="/cms/users/delete" onsubmit="return confirm('Delete this administrator?')">
-                        <input type="hidden" name="user_email" value="{{ u.user_email }}">
-                        <button class="menu-item menu-item--danger" type="submit" {% if u.user_email == request.session.get('user_email') %}disabled title="You cannot delete your own account"{% endif %}>
-                          <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
-                          Remove administrator
-                        </button>
-                      </form>
+                      <button
+                        class="menu-item menu-item--danger"
+                        type="button"
+                        data-dialog-open="user-delete-dialog-{{ loop.index }}"
+                        {% if u.user_email == request.session.get('user_email') %}disabled title="You cannot delete your own account"{% endif %}
+                      >
+                        <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+                        Remove administrator
+                      </button>
                     </div>
                   </details>
                 </div>
@@ -65,9 +67,15 @@
     </div>
   </section>
 
-  <dialog class="dialog--small" id="user-create-dialog">
+  <dialog
+    class="dialog--small"
+    id="user-create-dialog"
+    aria-labelledby="user-create-dialog-title"
+  >
     <header class="dialog__header">
-      <span class="dialog__heading"><h2>Add administrator</h2><span>Grant CMS access</span></span>
+      <div class="dialog__heading">
+        <h2 id="user-create-dialog-title">Add administrator</h2>
+      </div>
       <button class="icon-button" type="button" data-dialog-close aria-label="Close">
         <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
       </button>
@@ -77,7 +85,7 @@
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="user_email" type="email" placeholder="name@company.com" required autocomplete="off">
+            <input class="input" name="user_email" type="email" placeholder="name@company.com" required autocomplete="off" autofocus>
           </label>
           <label class="field">
             <span class="field__label">Temporary password</span>
@@ -93,9 +101,17 @@
   </dialog>
 
   {% for u in users %}
-  <dialog class="dialog--small" id="password-dialog-{{ loop.index }}">
+  <dialog
+    class="dialog--small"
+    id="password-dialog-{{ loop.index }}"
+    aria-labelledby="password-dialog-{{ loop.index }}-title"
+    aria-describedby="password-dialog-{{ loop.index }}-description"
+  >
     <header class="dialog__header">
-      <span class="dialog__heading"><h2>Change password</h2><span>{{ u.user_email }}</span></span>
+      <div class="dialog__heading">
+        <h2 id="password-dialog-{{ loop.index }}-title">Change password</h2>
+        <p class="dialog__description" id="password-dialog-{{ loop.index }}-description">{{ u.user_email }}</p>
+      </div>
       <button class="icon-button" type="button" data-dialog-close aria-label="Close">
         <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
       </button>
@@ -105,12 +121,47 @@
       <div class="dialog__body">
         <label class="field">
           <span class="field__label">New password</span>
-          <input class="input" name="password" type="password" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password">
+          <input class="input" name="password" type="password" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password" autofocus>
         </label>
       </div>
       <footer class="dialog__footer">
         <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
         <button class="button button--primary" type="submit">Update password</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog
+    class="dialog--small dialog--danger"
+    id="user-delete-dialog-{{ loop.index }}"
+    aria-labelledby="user-delete-dialog-{{ loop.index }}-title"
+    aria-describedby="user-delete-dialog-{{ loop.index }}-description"
+  >
+    <header class="dialog__header">
+      <div class="dialog__heading">
+        <h2 id="user-delete-dialog-{{ loop.index }}-title">Remove administrator?</h2>
+        <p class="dialog__description" id="user-delete-dialog-{{ loop.index }}-description">{{ u.user_email }}</p>
+      </div>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
+    <form method="post" action="/cms/users/delete">
+      <input type="hidden" name="user_email" value="{{ u.user_email }}">
+      <div class="dialog__body">
+        <div class="dialog__warning">
+          <span class="dialog__warning-icon" aria-hidden="true">
+            <svg class="icon"><use href="#icon-alert"></use></svg>
+          </span>
+          <span>
+            <strong>Account will be removed</strong>
+            <span>Existing CMS sessions remain active until they sign out or expire.</span>
+          </span>
+        </div>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close autofocus>Cancel</button>
+        <button class="button button--danger" type="submit" {% if u.user_email == request.session.get('user_email') %}disabled title="You cannot delete your own account"{% endif %}>Remove administrator</button>
       </footer>
     </form>
   </dialog>

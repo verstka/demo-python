@@ -40,10 +40,10 @@
         <table aria-label="Article list">
           <colgroup>
             <col style="width:27%">
-            <col style="width:18%">
+            <col style="width:28%">
             <col style="width:13%">
             <col class="hide-tablet" style="width:16%">
-            <col style="width:26%">
+            <col style="width:16%">
           </colgroup>
           <thead>
             <tr>
@@ -66,7 +66,11 @@
                   </span>
                 </div>
               </td>
-              <td><a class="path" href="{{ a.path }}/" target="_blank" rel="noopener noreferrer">{{ a.path }}</a></td>
+              <td>
+                <a class="path" href="/cms/articles/open?path={{ a.path_q }}" target="_blank" rel="noopener noreferrer" aria-label="Open {{ a.path }} in the Verstka editor (opens in a new tab)" title="Open {{ a.path }} in the Verstka editor">
+                  <span>Open {{ a.path }}</span>
+                </a>
+              </td>
               <td>
                 <span class="status{% if a.is_visible %} status--visible{% endif %}">{% if a.is_visible %}Published{% else %}Hidden{% endif %}</span>
               </td>
@@ -78,10 +82,6 @@
                       <svg class="icon" aria-hidden="true"><use href="#icon-more"></use></svg>
                     </summary>
                     <div class="menu-popover">
-                      <a class="menu-item" href="/cms/articles/open?path={{ a.path_q }}" target="_blank" rel="noopener noreferrer">
-                        <svg class="icon" aria-hidden="true"><use href="#icon-external"></use></svg>
-                        Open editor
-                      </a>
                       <button class="menu-item" type="button" data-dialog-open="article-og-dialog-{{ loop.index }}">
                         <svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg>
                         OG settings
@@ -94,13 +94,10 @@
                           {% if a.is_visible %}Hide article{% else %}Publish article{% endif %}
                         </button>
                       </form>
-                      <form method="post" action="/cms/articles/delete" onsubmit="return confirm('Delete this article?')">
-                        <input type="hidden" name="path" value="{{ a.path }}">
-                        <button class="menu-item menu-item--danger" type="submit">
-                          <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
-                          Delete
-                        </button>
-                      </form>
+                      <button class="menu-item menu-item--danger" type="button" data-dialog-open="article-delete-dialog-{{ loop.index }}">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+                        Delete
+                      </button>
                     </div>
                   </details>
                 </div>
@@ -118,9 +115,14 @@
     </div>
   </section>
 
-  <dialog id="article-create-dialog">
+  <dialog
+    id="article-create-dialog"
+    aria-labelledby="article-create-dialog-title"
+  >
     <header class="dialog__header">
-      <span class="dialog__heading"><h2>New article</h2><span>Create a new entry</span></span>
+      <div class="dialog__heading">
+        <h2 id="article-create-dialog-title">Create article</h2>
+      </div>
       <button class="icon-button" type="button" data-dialog-close aria-label="Close">
         <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
       </button>
@@ -128,11 +130,17 @@
     <form method="post" action="/cms/articles/create">
       <div class="dialog__body">
         <div class="form-grid">
-          <label class="field">
-            <span class="field__label">Path</span>
-            <input class="input" name="path" placeholder="/blog/new-article" required>
-            <span class="field__hint">Start with /, for example /index or /journal/story.</span>
-          </label>
+          <div class="field">
+            <label class="field__label" for="article-create-path">Path</label>
+            <input
+              class="input"
+              id="article-create-path"
+              name="path"
+              placeholder="/blog/new-article"
+              required
+              autofocus
+            >
+          </div>
           <label class="field">
             <span class="field__label">Title</span>
             <input class="input" name="title" placeholder="Article title" required>
@@ -157,9 +165,16 @@
   </dialog>
 
   {% for a in articles %}
-  <dialog id="article-og-dialog-{{ loop.index }}">
+  <dialog
+    id="article-og-dialog-{{ loop.index }}"
+    aria-labelledby="article-og-dialog-{{ loop.index }}-title"
+    aria-describedby="article-og-dialog-{{ loop.index }}-description"
+  >
     <header class="dialog__header">
-      <span class="dialog__heading"><h2>OG settings</h2><span>{{ a.path }}</span></span>
+      <div class="dialog__heading">
+        <h2 id="article-og-dialog-{{ loop.index }}-title">OG settings</h2>
+        <p class="dialog__description" id="article-og-dialog-{{ loop.index }}-description">{{ a.path }}</p>
+      </div>
       <button class="icon-button" type="button" data-dialog-close aria-label="Close">
         <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
       </button>
@@ -170,7 +185,7 @@
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Title</span>
-            <input class="input" name="title" value="{{ a.title }}" placeholder="Article title" required>
+            <input class="input" name="title" value="{{ a.title }}" placeholder="Article title" required autofocus>
           </label>
           <label class="field">
             <span class="field__label">OG title</span>
@@ -189,6 +204,41 @@
       <footer class="dialog__footer">
         <button class="button button--ghost" type="button" data-dialog-close>Cancel</button>
         <button class="button button--primary" type="submit">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog
+    class="dialog--small dialog--danger"
+    id="article-delete-dialog-{{ loop.index }}"
+    aria-labelledby="article-delete-dialog-{{ loop.index }}-title"
+    aria-describedby="article-delete-dialog-{{ loop.index }}-description"
+  >
+    <header class="dialog__header">
+      <div class="dialog__heading">
+        <h2 id="article-delete-dialog-{{ loop.index }}-title">Delete article?</h2>
+        <p class="dialog__description" id="article-delete-dialog-{{ loop.index }}-description">{{ a.title }} · {{ a.path }}</p>
+      </div>
+      <button class="icon-button" type="button" data-dialog-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+      </button>
+    </header>
+    <form method="post" action="/cms/articles/delete">
+      <input type="hidden" name="path" value="{{ a.path }}">
+      <div class="dialog__body">
+        <div class="dialog__warning">
+          <span class="dialog__warning-icon" aria-hidden="true">
+            <svg class="icon"><use href="#icon-alert"></use></svg>
+          </span>
+          <span>
+            <strong>This cannot be undone</strong>
+            <span>The CMS entry and everything published under this path will be permanently removed.</span>
+          </span>
+        </div>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--ghost" type="button" data-dialog-close autofocus>Cancel</button>
+        <button class="button button--danger" type="submit">Delete article</button>
       </footer>
     </form>
   </dialog>
